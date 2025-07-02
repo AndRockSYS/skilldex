@@ -23,7 +23,6 @@ interface Props {
     isWinner: boolean;
 
     stake: {
-        initial: bigint;
         pool: bigint;
         token: Token;
     };
@@ -128,14 +127,14 @@ export default function EndGameScreen({
                                 <div className='flex justify-between'>
                                     <span>Your Stake:</span>{' '}
                                     <span className='font-medium'>
-                                        {formatTokenAmount(stake.initial, stake.token)}{' '}
+                                        {formatTokenAmount(stake.pool / BigInt(2), stake.token)}{' '}
                                         {stake.token}
                                     </span>
                                 </div>
                                 <div className='flex justify-between'>
                                     <span>Opponent's Stake:</span>{' '}
                                     <span className='font-medium'>
-                                        {formatTokenAmount(stake.initial, stake.token)}{' '}
+                                        {formatTokenAmount(stake.pool / BigInt(2), stake.token)}{' '}
                                         {stake.token}
                                     </span>
                                 </div>

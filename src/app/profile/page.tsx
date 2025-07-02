@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { ProfileSettings, profileSettingsSchema } from '@/config/zod';
+import { ProfileSettings, profileSettingsSchema } from '@/lib/zod';
 import { LOCAL_KEY_SETTING } from '@/utils/constants';
 
 export default function ProfilePage() {
