@@ -1,20 +1,21 @@
 'use client';
 
-import { Bot } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 
-import { ActivePlayer, PlayerStatus } from '@/types/user';
-
 import { formatWallet } from '@/utils/formatter';
+
+import { getStatusName, Player, PlayerStatus } from '@/types/user';
 
 export default function PlayerCard({
     player,
+    turnWallet,
     isActive,
     displayedReaction,
 }: {
-    player: ActivePlayer;
+    player: Player;
+    turnWallet: string;
     isActive: boolean;
     displayedReaction: string | null;
 }) {
@@ -36,7 +37,7 @@ export default function PlayerCard({
             <CardHeader className='flex flex-row items-center gap-3 sm:gap-4 p-3 sm:p-4'>
                 <Avatar className='h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary'>
                     <AvatarImage
-                        src={player.avatarUrl || `https://placehold.co/64x64.png`}
+                        src={player.avatar || `https://placehold.co/64x64.png`}
                         alt={player.name}
                         data-ai-hint='player avatar'
                     />
@@ -46,20 +47,18 @@ export default function PlayerCard({
                 </Avatar>
                 <div>
                     <CardTitle className='font-headline text-lg sm:text-xl'>
-                        {player.name} {player.isCurrentUser && '(You)'}
+                        {player.name} {player.wallet == turnWallet && '(You)'}
                     </CardTitle>
                     <div className='flex items-center mt-1'>
                         <Badge
-                            variant={
-                                player.status == PlayerStatus.Online ||
-                                player.status == PlayerStatus.Thinking
-                                    ? 'default'
-                                    : 'secondary'
-                            }
+                            variant={player.wallet == turnWallet ? 'default' : 'secondary'}
                             className='text-xs sm:text-sm'
                         >
-                            {player.status == PlayerStatus.AI && <Bot className='h-4 w-4 mr-1' />}
-                            {player.status}
+                            {/* // todo add for AI
+                            {player.status == PlayerStatus.AI && <Bot className='h-4 w-4 mr-1' />} */}
+                            {player.wallet == turnWallet
+                                ? getStatusName(PlayerStatus.Thinking)
+                                : getStatusName(PlayerStatus.Waiting)}
                         </Badge>
                         {player.score > 0 && (
                             <Badge variant='outline' className='ml-2 text-xs sm:text-sm'>

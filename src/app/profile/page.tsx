@@ -19,42 +19,32 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ProfileSettings, profileSettingsSchema } from '@/lib/zod';
-import { LOCAL_KEY_SETTING } from '@/utils/constants';
+import { updateNotifications } from '@/lib/redux/slice/user';
 
 export default function ProfilePage() {
+    const user = useAppSelector((state) => state.userReducer);
+    const dispatch = useAppDispatch();
     const { publicKey } = useWallet();
-    const { toast } = useToast();
 
+    const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
 
     const form = useForm<ProfileSettings>({
         resolver: zodResolver(profileSettingsSchema),
         defaultValues: {
-            enableGameSounds: true,
-            enableBrowserNotifications: true,
-            emailForNotifications: '',
+            gameSound: true,
+            browser: true,
+            email: '',
         },
     });
 
     useEffect(() => {
-        // todo save email inside of the database
-        const savedSettings = localStorage.getItem(LOCAL_KEY_SETTING);
-        if (savedSettings) {
-            try {
-                const parsedSettings = JSON.parse(savedSettings) as ProfileSettings;
-                form.reset(parsedSettings);
-            } catch (error) {
-                toast({
-                    title: 'Error',
-                    description: 'Could not load saved settings.',
-                    variant: 'destructive',
-                });
-            }
-        }
-    }, [form, toast]);
+        if (user) form.reset(user.notifications);
+    }, [user]);
 
     const onSubmit = async (data: ProfileSettings) => {
         if (!publicKey) {
@@ -65,19 +55,16 @@ export default function ProfilePage() {
             });
             return;
         }
+
         setIsSaving(true);
 
-        // todo save user data with firebase
-        // TODO: Implement actual backend call to save settings
+        await dispatch(updateNotifications({ wallet: publicKey.toString(), ...data }));
 
-        setTimeout(() => {
-            // Simulate API call delay
-            toast({
-                title: 'Settings Saved',
-                description: 'Your profile preferences have been updated locally.',
-            });
-            setIsSaving(false);
-        }, 1000);
+        toast({
+            title: 'Settings Saved',
+            description: 'Your profile preferences have been updated locally.',
+        });
+        setIsSaving(false);
     };
 
     if (!publicKey) {
@@ -92,6 +79,8 @@ export default function ProfilePage() {
             </div>
         );
     }
+
+    // todo add dispay name and avatar updates
 
     return (
         <div className='max-w-2xl mx-auto py-8 px-4 sm:px-0'>
@@ -111,7 +100,7 @@ export default function ProfilePage() {
                         <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
                             <FormField
                                 control={form.control}
-                                name='enableGameSounds'
+                                name='gameSound'
                                 render={({ field }) => (
                                     <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-card'>
                                         <div className='space-y-0.5'>
@@ -136,7 +125,7 @@ export default function ProfilePage() {
 
                             <FormField
                                 control={form.control}
-                                name='enableBrowserNotifications'
+                                name='browser'
                                 render={({ field }) => (
                                     <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-card'>
                                         <div className='space-y-0.5'>
@@ -161,7 +150,7 @@ export default function ProfilePage() {
 
                             <FormField
                                 control={form.control}
-                                name='emailForNotifications'
+                                name='email'
                                 render={({ field }) => (
                                     <FormItem className='rounded-lg border p-4 shadow-sm bg-card'>
                                         <FormLabel className='text-base flex items-center'>

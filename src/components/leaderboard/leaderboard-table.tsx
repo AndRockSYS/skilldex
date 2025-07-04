@@ -13,7 +13,7 @@ import { Trophy, UserCircle2, Star, Hash } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-import { UserStats } from '@/types/user';
+import { getRank, UserStats } from '@/types/user';
 import { formatWallet } from '@/utils/formatter';
 
 interface Props {
@@ -76,26 +76,24 @@ export default function LeaderboardTable({ users }: Props) {
                                 {index === 2 && (
                                     <Trophy className='inline-block h-5 w-5 text-amber-500 mr-1' />
                                 )}
-                                {user.rank || index + 1}
+                                {getRank(user.points)}
                             </TableCell>
                             <TableCell>
                                 <div className='flex items-center gap-3'>
                                     <Avatar className='h-8 w-8 sm:h-10 sm:w-10 border-2 border-primary/50'>
                                         <AvatarImage
                                             src={`https://placehold.co/40x40.png`}
-                                            alt={
-                                                user.displayName || formatWallet(user.walletAddress)
-                                            }
+                                            alt={user.name || formatWallet(user.walletAddress)}
                                             data-ai-hint='user avatar'
                                         />
                                         <AvatarFallback>
-                                            {(user.displayName || user.walletAddress)
+                                            {(user.name || user.walletAddress)
                                                 .substring(0, 2)
                                                 .toUpperCase()}
                                         </AvatarFallback>
                                     </Avatar>
                                     <span className='font-medium truncate'>
-                                        {user.displayName || formatWallet(user.walletAddress)}
+                                        {user.name || formatWallet(user.walletAddress)}
                                     </span>
                                 </div>
                             </TableCell>

@@ -1,6 +1,7 @@
 import { LucideIcon } from 'lucide-react';
 import type { Timestamp } from 'firebase/firestore';
 import { Token } from './utils';
+import { Player } from './user';
 
 export type GameDefinition = {
     id: GameType;
@@ -56,35 +57,17 @@ export interface Lobby {
 
     pool: {
         initial: number;
-        amount: number;
         token: Token;
     };
 
-    creator: {
-        wallet: string;
-        score?: number;
-        lastEmoji?: { emoji: string; timestamp: Timestamp };
-    };
-    opponent?: {
-        wallet: string;
-        score?: number;
-        lastEmoji?: { emoji: string; timestamp: Timestamp };
-    };
+    creator: Player;
+    opponent?: Player;
     winner?: string;
-
-    signature: {
-        creation?: string;
-        join?: string;
-    };
 
     turn: {
         currentPlayerWallet: string;
-        turnStartTimestamp: Timestamp;
-        turnTimeLimit: number;
-    };
-    score: {
-        creator: number;
-        opponent: number;
+        startTimestamp: Timestamp;
+        timeLimit: number;
     };
 
     createdAt: Timestamp;

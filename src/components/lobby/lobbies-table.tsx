@@ -96,7 +96,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                 <TableCell>
                                     <div className='flex items-center whitespace-nowrap'>
                                         <Coins className='h-4 w-4 mr-1 text-yellow-500 shrink-0' />
-                                        {(lobby.pool.amount / LAMPORTS_PER_SOL).toFixed(2)}
+                                        {(lobby.pool.initial / LAMPORTS_PER_SOL).toFixed(2)}
                                     </div>
                                 </TableCell>
                                 <TableCell>
@@ -199,7 +199,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                                     <History className='mr-2 h-4 w-4' />
                                                 )}
                                                 {status == GameState.Active
-                                                    ? lobby.opponent && lobby.signature.join
+                                                    ? lobby.opponent
                                                         ? 'View'
                                                         : 'Wait Opponent'
                                                     : 'Details'}

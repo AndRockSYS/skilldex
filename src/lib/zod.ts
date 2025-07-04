@@ -4,15 +4,12 @@ import { MAX_STAKE, MIN_STAKE } from '@/utils/constants';
 
 import { GameType, MatchFormat } from '@/types/games';
 import { getTokenName, Token } from '@/types/utils';
+import { ModerationAction } from '@/types/admin';
 
 export const profileSettingsSchema = z.object({
-    enableGameSounds: z.boolean().optional(),
-    enableBrowserNotifications: z.boolean().optional(),
-    emailForNotifications: z
-        .string()
-        .email({ message: 'Invalid email address' })
-        .optional()
-        .or(z.literal('')),
+    gameSound: z.boolean(),
+    browser: z.boolean(),
+    email: z.string().email({ message: 'Invalid email address' }).optional().or(z.literal('')),
 });
 
 export type ProfileSettings = z.infer<typeof profileSettingsSchema>;
@@ -58,4 +55,10 @@ export const generateTauntOutput = z.object({
         ),
 });
 
-export type GenerateTauntOutput = z.infer<typeof generateTauntOutput>;
+export const moderationForm = z.object({
+    wallet: z.string(),
+    action: z.custom<ModerationAction>(),
+    reason: z.string().min(10, 'Describe the reason'),
+});
+
+export type ModerationForm = z.infer<typeof moderationForm>;
