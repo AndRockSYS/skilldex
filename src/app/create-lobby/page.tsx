@@ -58,7 +58,7 @@ export default function CreateLobby() {
     const gameId = searchParams.get('gameId');
     const matchFormatId = searchParams.get('matchFormatId');
 
-    const { createLobby } = useLobby();
+    const { createLobby, lobby } = useLobby();
     const wallet = useWallet();
 
     const formatId = Number(matchFormatId ?? 0);
@@ -78,7 +78,7 @@ export default function CreateLobby() {
 
     const watchedStake = form.watch('stake');
 
-    if (form.formState.isSubmitted) return <SuccessCreation />;
+    if (form.formState.isSubmitted && lobby) return <SuccessCreation lobby={lobby} />;
 
     return (
         <div className='max-w-2xl mx-auto p-4 sm:p-0'>
