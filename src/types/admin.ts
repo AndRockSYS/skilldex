@@ -4,19 +4,11 @@ import { Timestamp } from 'firebase/firestore';
 
 export type ModerationAction = 'warn' | 'ban' | 'unban';
 
-export interface ModerationActionDetails {
-    action: ModerationAction;
-    reason: string;
-    timestamp: Timestamp;
-    moderatorId?: string;
-}
-
 export interface Moderation {
     wallet: string;
-    currentStatus: ModerationAction;
-    lastReason?: string;
-    lastUpdatedAt: Timestamp;
-    moderationHistory: ModerationActionDetails[];
+    action: ModerationAction;
+    reason: string;
+    createdAt: Timestamp;
 }
 
 export type FlaggedGameStatus = 'open' | 'resolved' | 'investigating';
