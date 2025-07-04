@@ -3,6 +3,7 @@ import { Metadata, Viewport } from 'next';
 
 import SolanaWalletProvider from '@/context/SolanaWalletProvider';
 import QueryProvider from '@/context/QueryProvider';
+import ReduxProvider from '@/context/ReduxProvider';
 
 import NavBar from '@/components/layout/nav-bar';
 import Footer from '@/components/layout/footer';
@@ -41,21 +42,23 @@ export default function RootLayout({
 }>) {
     return (
         <html lang='en' className='dark'>
-            <QueryProvider>
-                <SolanaWalletProvider>
-                    <body
-                        className={`${inter.variable} ${poppins.variable} font-body antialiased min-h-screen flex flex-col bg-background text-foreground relative`}
-                    >
-                        <NavBar />
-                        <main className='flex-grow container mx-auto px-4 py-6 sm:py-8 z-10'>
-                            {children}
-                        </main>
-                        <Toaster />
-                        <Footer />
-                    </body>
-                    <WelcomeModal />
-                </SolanaWalletProvider>
-            </QueryProvider>
+            <ReduxProvider>
+                <QueryProvider>
+                    <SolanaWalletProvider>
+                        <body
+                            className={`${inter.variable} ${poppins.variable} font-body antialiased min-h-screen flex flex-col bg-background text-foreground relative`}
+                        >
+                            <NavBar />
+                            <main className='flex-grow container mx-auto px-4 py-6 sm:py-8 z-10'>
+                                {children}
+                            </main>
+                            <Toaster />
+                            <Footer />
+                        </body>
+                        <WelcomeModal />
+                    </SolanaWalletProvider>
+                </QueryProvider>
+            </ReduxProvider>
         </html>
     );
 }
