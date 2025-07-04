@@ -7,17 +7,38 @@ import { TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
 import { useCallback, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-import { FlaggedGameEntry } from '@/types/admin';
+import { resolveFlaggedGame } from '@/lib/firebase/admin';
+
+import { FlaggedGame } from '@/types/admin';
 
 interface Props {
-    flaggedGames: FlaggedGameEntry[];
+    flaggedGames: FlaggedGame[];
 }
 
 export default function FlaggedGames({ flaggedGames }: Props) {
-    const [isResolving, setIsResolving] = useState(false);
+    const { toast } = useToast();
 
-    const handleResolveFlaggedGame = useCallback(async (id: string) => {}, []);
+    const [isResolving, setIsResolving] = useState(false);
+    const handleResolveFlaggedGame = useCallback(async (id: string) => {
+        try {
+            setIsResolving(true);
+            await resolveFlaggedGame(id, 'resolved');
+            toast({
+                title: 'Resolved',
+                description: 'The game was resolved successfully!',
+            });
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'An error occurred during resolving.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsResolving(false);
+        }
+    }, []);
 
     return (
         <TabsContent value='flags' className='mt-6'>
@@ -58,11 +79,6 @@ export default function FlaggedGames({ flaggedGames }: Props) {
                                         {flag.status}
                                     </Badge>
                                 </p>
-                                {flag.resolutionNotes && (
-                                    <p className='text-xs mt-1'>
-                                        Resolution: {flag.resolutionNotes}
-                                    </p>
-                                )}
                                 {flag.status === 'open' && (
                                     <Button
                                         size='sm'

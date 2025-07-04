@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
-import AppDatabase from '@/lib/firebase/client-database';
+import AppDatabase from '@/lib/firebase/client';
 
 import { UserStats } from '@/types/user';
 import { Timestamp } from 'firebase/firestore';

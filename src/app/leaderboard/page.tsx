@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 import { useQuery } from '@tanstack/react-query';
 
-import AppDatabase from '@/lib/firebase/client-database';
+import AppDatabase from '@/lib/firebase/client';
 
 export default async function LeaderboardPage() {
     const { data: users, error } = useQuery({

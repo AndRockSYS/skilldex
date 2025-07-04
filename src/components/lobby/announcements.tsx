@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 
 import { LOCAL_KEY_ANNOUNCEMENT_TIMESTAMP } from '@/utils/constants';
 
-import AppDatabase from '@/lib/firebase/client-database';
+import AppDatabase from '@/lib/firebase/client';
 
 export default function Announcements() {
     const { toast } = useToast();

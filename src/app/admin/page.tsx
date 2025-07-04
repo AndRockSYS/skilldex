@@ -24,7 +24,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
-import { fetchAdminData, verifyPassword } from '@/lib/firebase/admin-database';
+import { fetchAdminData, verifyPassword } from '@/lib/firebase/admin';
 
 export default function AdminPage() {
     const { toast } = useToast();
@@ -41,7 +41,7 @@ export default function AdminPage() {
         isFetching: isPageLoading,
     } = useQuery({
         queryKey: ['admin'],
-        queryFn: async () => await fetchAdminData(loginPassword),
+        queryFn: async () => await fetchAdminData(),
         enabled: isAuthed,
     });
 

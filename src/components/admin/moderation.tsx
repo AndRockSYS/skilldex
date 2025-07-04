@@ -25,25 +25,46 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
+import { useForm } from 'react-hook-form';
+import { useToast } from '@/hooks/use-toast';
 
-import { ModerationAction, ModerationEntry } from '@/types/admin';
+import { moderationForm, ModerationForm } from '@/lib/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { addModerationAction } from '@/lib/firebase/admin';
+
+import { ModerationAction, Moderation } from '@/types/admin';
 
 interface Props {
-    moderationList: ModerationEntry[];
+    moderationList: Moderation[];
 }
 
-export default function Moderation({ moderationList }: Props) {
-    const [isProcessing, setIsProcessing] = useState(false);
+export default function ModerationPage({ moderationList }: Props) {
+    const { toast } = useToast();
 
-    const [modWalletAddress, setModWalletAddress] = useState('');
-    const [modAction, setModAction] = useState<ModerationAction>('warn');
-    const [modReason, setModReason] = useState('');
+    const form = useForm<ModerationForm>({
+        resolver: zodResolver(moderationForm),
+        defaultValues: {
+            wallet: '',
+            action: 'warn',
+            reason: '',
+        },
+    });
 
-    // todo rewrite form with the form hook
-
-    const handleModerationSubmit = useCallback(() => {
-        // todo add
+    const handleModerationSubmit = useCallback(async (data: ModerationForm) => {
+        try {
+            await addModerationAction(data);
+            toast({
+                title: 'Success',
+                description: 'Moderation was submitted successfully!',
+            });
+        } catch (error) {
+            toast({
+                title: 'An Error Occured',
+                description: 'Moderation was not added due to an error',
+                variant: 'destructive',
+            });
+        }
     }, []);
 
     return (
@@ -54,17 +75,22 @@ export default function Moderation({ moderationList }: Props) {
                     <CardDescription>Apply warnings or bans to user wallets.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleModerationSubmit} className='space-y-4 mb-6'>
+                    <form
+                        onSubmit={form.handleSubmit(handleModerationSubmit)}
+                        className='space-y-4 mb-6'
+                    >
                         <Input
                             type='text'
                             placeholder='User Wallet Address'
-                            value={modWalletAddress}
-                            onChange={(e) => setModWalletAddress(e.target.value)}
+                            value={form.getValues().wallet}
+                            onChange={(e) => form.setValue('wallet', e.currentTarget.value)}
                             required
                         />
                         <Select
-                            value={modAction}
-                            onValueChange={(value: ModerationAction) => setModAction(value)}
+                            value={form.getValues().action}
+                            onValueChange={(value: ModerationAction) =>
+                                form.setValue('action', value)
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder='Select action' />
@@ -77,12 +103,14 @@ export default function Moderation({ moderationList }: Props) {
                         </Select>
                         <Textarea
                             placeholder='Reason for action (required)'
-                            value={modReason}
-                            onChange={(e) => setModReason(e.target.value)}
+                            value={form.getValues().reason}
+                            onChange={(e) => form.setValue('reason', e.target.value)}
                             required
                         />
-                        <Button type='submit' disabled={isProcessing}>
-                            {isProcessing && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}{' '}
+                        <Button type='submit' disabled={form.formState.isSubmitting}>
+                            {form.formState.isSubmitting && (
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                            )}{' '}
                             Apply Action
                         </Button>
                     </form>

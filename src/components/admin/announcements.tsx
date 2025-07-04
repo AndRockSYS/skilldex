@@ -6,8 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Trash2 } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -21,25 +19,61 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import { useCallback, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-import { AnnouncementEntry } from '@/types/admin';
+import { createAnnouncement, deleteAnnouncement } from '@/lib/firebase/admin';
+
+import { Announcement } from '@/types/admin';
 
 interface Props {
-    announcements: AnnouncementEntry[];
+    announcements: Announcement[];
 }
 
 export default function Announcements({ announcements }: Props) {
-    const [announcementTitle, setAnnouncementTitle] = useState('');
-    const [announcementContent, setAnnouncementContent] = useState('');
+    const { toast } = useToast();
+
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const handleAnnouncementSubmit = useCallback(() => {}, []);
-
-    const [isToggling, setIsToggling] = useState(false);
-    const handleAnnouncementToggle = useCallback((id: string, isVisible: boolean) => {}, []);
+    const handleAnnouncementSubmit = useCallback(async () => {
+        try {
+            setIsSubmitting(true);
+            await createAnnouncement(title, content);
+            toast({
+                title: 'Success',
+                description: 'Announcement was submitted successfully!',
+            });
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'An error occurred while creating the announcement.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, [title, content]);
 
     const [isDeleting, setIsDeleting] = useState(false);
-    const handleDeleteAnnouncement = useCallback((id: string) => {}, []);
+    const handleDeleteAnnouncement = useCallback(async (id: string) => {
+        try {
+            setIsDeleting(true);
+            await deleteAnnouncement(id);
+            toast({
+                title: 'Success',
+                description: 'Announcement was deleted successfully!',
+            });
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'An error occurred while creating the announcement.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsDeleting(false);
+        }
+    }, []);
 
     return (
         <TabsContent value='announcements' className='mt-6'>
@@ -53,14 +87,14 @@ export default function Announcements({ announcements }: Props) {
                         <Input
                             type='text'
                             placeholder='Announcement Title'
-                            value={announcementTitle}
-                            onChange={(e) => setAnnouncementTitle(e.target.value)}
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                             required
                         />
                         <Textarea
                             placeholder='Announcement Content'
-                            value={announcementContent}
-                            onChange={(e) => setAnnouncementContent(e.target.value)}
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
                             required
                         />
                         <Button type='submit' disabled={isSubmitting}>
@@ -93,22 +127,6 @@ export default function Announcements({ announcements }: Props) {
                                         )}
                                     </div>
                                     <div className='flex flex-col items-end gap-2 shrink-0 ml-2'>
-                                        <div className='flex items-center space-x-2'>
-                                            <Label
-                                                htmlFor={`visible-${ann.id}`}
-                                                className='text-xs'
-                                            >
-                                                {ann.isVisible ? 'Visible' : 'Hidden'}
-                                            </Label>
-                                            <Switch
-                                                id={`visible-${ann.id}`}
-                                                checked={ann.isVisible}
-                                                onCheckedChange={() =>
-                                                    handleAnnouncementToggle(ann.id, ann.isVisible)
-                                                }
-                                                disabled={isToggling}
-                                            />
-                                        </div>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button
