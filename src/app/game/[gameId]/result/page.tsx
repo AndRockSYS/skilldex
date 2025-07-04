@@ -10,7 +10,9 @@ import { useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { Lobby, MatchFormat } from '@/types/games';
+import GameDatabase from '@/lib/firebase/game-database';
+
+import { MatchFormat } from '@/types/games';
 
 export default function WinPage() {
     const { gameId } = useParams();
@@ -24,10 +26,7 @@ export default function WinPage() {
         error,
     } = useQuery({
         queryKey: ['game', gameId],
-        queryFn: async () => {
-            // todo fetch and return the game
-            return {} as Lobby;
-        },
+        queryFn: async () => await GameDatabase.fetchLobbyById(Number(gameId)),
         throwOnError: (error) => {
             toast({
                 title: 'Error',
@@ -36,6 +35,7 @@ export default function WinPage() {
             });
             throw error;
         },
+        enabled: !!gameId && !Number.isNaN(Number(gameId)),
     });
 
     useEffect(() => {

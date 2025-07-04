@@ -9,17 +9,14 @@ import { useToast } from '@/hooks/use-toast';
 
 import { LOCAL_KEY_ANNOUNCEMENT_TIMESTAMP } from '@/utils/constants';
 
-import { Announcement } from '@/types/announcement';
+import AppDatabase from '@/lib/firebase/client-database';
 
 export default function Announcements() {
     const { toast } = useToast();
 
     const { data: announcements } = useQuery({
         queryKey: ['announcement'],
-        queryFn: async () => {
-            // todo fetch announcements
-            return {} as Announcement[];
-        },
+        queryFn: async () => await AppDatabase.fetchAnnouncements(),
         throwOnError: (error) => {
             toast({
                 title: 'Announcements Error',

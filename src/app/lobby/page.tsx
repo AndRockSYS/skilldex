@@ -24,19 +24,22 @@ import LobbiesTable from '@/components/lobby/lobbies-table';
 import Announcements from '@/components/lobby/announcements';
 
 import { useState, useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { useInfiniteQuery } from '@tanstack/react-query';
+
+import GameDatabase from '@/lib/firebase/game-database';
 
 import { games } from '@/content/games';
 
-import { GameState, GameType, Lobby } from '@/types/games';
+import { GameState, GameType } from '@/types/games';
 
 export default function LobbyPage() {
+    const { lobbyId } = useParams();
+
     const [searchTerm, setSearchTerm] = useState('');
     const [gameType, setGameType] = useState<GameType>();
     const [minStake, setMinStake] = useState<string>('');
     const [maxStake, setMaxStake] = useState<string>('');
-
-    // todo extract lobbyId from search params and set it as a search term
 
     const {
         data: lobbies,
@@ -46,9 +49,10 @@ export default function LobbyPage() {
         hasPreviousPage,
     } = useInfiniteQuery({
         queryKey: ['lobby', 'all'],
-        queryFn: async () => {
-            // todo fetch all lobbies
-            return {} as Lobby[];
+        queryFn: async ({ pageParam }) => {
+            return Number.isNaN(Number(lobbyId))
+                ? [await GameDatabase.fetchLobbyById(Number(lobbyId))]
+                : await GameDatabase.fetchLobbies(pageParam);
         },
         getNextPageParam: (lastPage) => lastPage[lastPage.length - 1].id,
         initialPageParam: 0,
@@ -56,8 +60,7 @@ export default function LobbyPage() {
     });
 
     const filteredLobbies = useMemo(() => {
-        // todo make dynamic
-        let filtered = lobbies.pages[0];
+        let filtered = lobbies.pages[lobbies.pages.length - 1];
 
         if (searchTerm) {
             filtered = filtered.filter(

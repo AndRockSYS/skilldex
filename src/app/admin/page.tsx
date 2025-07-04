@@ -24,9 +24,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
-import { verifyAdminPassword } from '@/actions/admin';
-
-import { AdminPageData } from '@/types/admin';
+import { fetchAdminData, verifyPassword } from '@/lib/firebase/admin-database';
 
 export default function AdminPage() {
     const { toast } = useToast();
@@ -43,10 +41,7 @@ export default function AdminPage() {
         isFetching: isPageLoading,
     } = useQuery({
         queryKey: ['admin'],
-        queryFn: async () => {
-            // todo fetch all the data
-            return {} as AdminPageData;
-        },
+        queryFn: async () => await fetchAdminData(loginPassword),
         enabled: isAuthed,
     });
 
@@ -54,8 +49,9 @@ export default function AdminPage() {
         event.preventDefault();
 
         setIsLogging(true);
-        const result = await verifyAdminPassword(loginPassword);
-        if (result.success) sessionStorage.setItem('isAdminAuthenticated', 'true');
+        const result = await verifyPassword(loginPassword);
+
+        if (result) sessionStorage.setItem('isAdminAuthenticated', 'true');
         else
             toast({
                 title: 'Authentication Failed',

@@ -5,14 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import LeaderboardTable from '@/components/leaderboard/leaderboard-table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
-import { UserStats } from '@/types/user';
+import AppDatabase from '@/lib/firebase/client-database';
 
 export default async function LeaderboardPage() {
-    // todo replace with useQuery
-    const [users, setUsers] = useState<UserStats[]>([]);
-    const error = '';
+    const { data: users, error } = useQuery({
+        queryKey: ['leaderboard'],
+        queryFn: async () => await AppDatabase.fetchLeaderboard(),
+        initialData: [],
+    });
 
     return (
         <div className='container mx-auto py-8 px-4'>
@@ -31,7 +33,7 @@ export default async function LeaderboardPage() {
                     {error && (
                         <Alert variant='destructive' className='mb-6'>
                             <AlertTitle>Error Loading Leaderboard</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
+                            <AlertDescription>{error.message}</AlertDescription>
                         </Alert>
                     )}
                     {!error && users.length === 0 && (
