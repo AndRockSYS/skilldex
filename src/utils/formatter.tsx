@@ -1,6 +1,6 @@
 import { Gamepad2 } from 'lucide-react';
 
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { games } from '@/content/games';
 
 import { LobbyDisplayStatus, Token } from '@/types/utils';
@@ -8,7 +8,6 @@ import { GameState, GameType, Lobby } from '@/types/games';
 import { Timestamp } from 'firebase/firestore';
 
 export const formatTokenAmount = (amount: number | BigInt, token: Token): number => {
-    // todo do for ETH
     switch (token) {
         case Token.SOL:
             return Number(amount) / LAMPORTS_PER_SOL;
@@ -33,13 +32,13 @@ export const GameIcon = ({ id }: { id: GameType }) => {
 
 export function getLobbyDisplayStatus(lobby: Lobby): LobbyDisplayStatus {
     if (lobby.state == GameState.Open) {
-        return lobby.signature.creation
+        return lobby.creator.txSignature
             ? { text: 'Open', variant: 'default' }
             : { text: 'Initializing', variant: 'secondary' };
     }
 
     if (lobby.state == GameState.Active) {
-        return lobby.opponent && !lobby.signature.join
+        return lobby.opponent && !lobby.opponent.txSignature
             ? { text: 'Opponent Staking', variant: 'secondary' }
             : { text: 'In Play', variant: 'default' };
     }
@@ -56,4 +55,13 @@ export function formatExpirationTime(expirationTime?: Timestamp): string {
               month: 'short',
           })
         : 'N/A';
+}
+
+export function isValidSolanaPublicKey(publicKey: string): boolean {
+    try {
+        new PublicKey(publicKey);
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
