@@ -31,18 +31,17 @@ export interface Announcement {
 }
 
 export interface Statistics {
-    totalChallenges: number;
-    openChallenges: number;
-    inPlayChallenges: number;
-    finishedChallenges: number;
-    totalStakeValue: number;
-    totalPlatformFeesEarned: number;
-    statusDistribution: Array<{ name: string; value: number }>;
+    games: {
+        open: number;
+        active: number;
+        finished: number;
+    };
+    totalStake: number;
+    // statusDistribution: Array<{ name: string; value: number }>;
 }
 
 export interface AdminPageData {
     stats: Statistics;
-    platformWallet: string;
     moderationList: Moderation[];
     flaggedGames: FlaggedGame[];
     announcements: Announcement[];

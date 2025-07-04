@@ -1,19 +1,18 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { TabsContent } from '@/components/ui/tabs';
 
-import { STATS_CHART_COLORS } from '@/utils/constants';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { PLATFORM_COMMISSION } from '@/utils/constants';
 
-import { StatisticsEntry } from '@/types/admin';
+import { Statistics } from '@/types/admin';
 
 interface Props {
-    stats: StatisticsEntry;
+    stats: Statistics;
 }
 
-export default function Statistics({ stats }: Props) {
+export default function StatisticsPage({ stats }: Props) {
     return (
         <TabsContent value='overview' className='mt-6'>
             <>
@@ -25,7 +24,7 @@ export default function Statistics({ stats }: Props) {
                         </CardHeader>
                         <CardContent>
                             <p className='text-2xl sm:text-3xl font-bold'>
-                                {stats.totalChallenges}
+                                {stats.games.active + stats.games.open + stats.games.finished}
                             </p>
                         </CardContent>
                     </Card>
@@ -34,7 +33,7 @@ export default function Statistics({ stats }: Props) {
                             <CardTitle className='text-base sm:text-lg'>Open</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className='text-2xl sm:text-3xl font-bold'>{stats.openChallenges}</p>
+                            <p className='text-2xl sm:text-3xl font-bold'>{stats.games.open}</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -42,9 +41,7 @@ export default function Statistics({ stats }: Props) {
                             <CardTitle className='text-base sm:text-lg'>In Play</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className='text-2xl sm:text-3xl font-bold'>
-                                {stats.inPlayChallenges}
-                            </p>
+                            <p className='text-2xl sm:text-3xl font-bold'>{stats.games.active}</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -52,9 +49,7 @@ export default function Statistics({ stats }: Props) {
                             <CardTitle className='text-base sm:text-lg'>Finished</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className='text-2xl sm:text-3xl font-bold'>
-                                {stats.finishedChallenges}
-                            </p>
+                            <p className='text-2xl sm:text-3xl font-bold'>{stats.games.finished}</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -65,7 +60,7 @@ export default function Statistics({ stats }: Props) {
                         </CardHeader>
                         <CardContent>
                             <p className='text-2xl sm:text-3xl font-bold'>
-                                {stats.totalStakeValue.toFixed(4)}
+                                {(stats.totalStake / LAMPORTS_PER_SOL).toFixed(4)}
                             </p>
                         </CardContent>
                     </Card>
@@ -77,12 +72,15 @@ export default function Statistics({ stats }: Props) {
                         </CardHeader>
                         <CardContent>
                             <p className='text-2xl sm:text-3xl font-bold'>
-                                {stats.totalPlatformFeesEarned.toFixed(4)}
+                                {(
+                                    (stats.totalStake / LAMPORTS_PER_SOL / 100) *
+                                    PLATFORM_COMMISSION
+                                ).toFixed(4)}
                             </p>
                         </CardContent>
                     </Card>
                 </div>
-                {stats.statusDistribution.some((d: any) => d.value > 0) && (
+                {/* {stats.statusDistribution.some((d: any) => d.value > 0) && (
                     <Card className='mt-6'>
                         <CardHeader>
                             <CardTitle className='text-base sm:text-lg'>
@@ -123,7 +121,7 @@ export default function Statistics({ stats }: Props) {
                             </ChartContainer>
                         </CardContent>
                     </Card>
-                )}
+                )} */}
             </>
         </TabsContent>
     );

@@ -1,15 +1,23 @@
 'use server';
 
 import admin from 'firebase-admin';
+import { FieldPath, AggregateField } from 'firebase-admin/firestore'; // Note the 'firebase-admin/firestore' import
 
-import { AdminPageData, FlaggedGame, FlaggedGameStatus, Announcement } from '@/types/admin';
-import { ModerationForm } from '../zod';
-
-import { Timestamp } from 'firebase/firestore';
+import AppDatabase from './client';
 
 import { revalidatePath } from 'next/cache';
 import { isValidSolanaPublicKey } from '@/utils/formatter';
 import { generateUID } from '@/utils/generator';
+
+import { ModerationForm } from '../zod';
+import { Timestamp } from 'firebase/firestore';
+import {
+    AdminPageData,
+    FlaggedGame,
+    FlaggedGameStatus,
+    Announcement,
+    Moderation,
+} from '@/types/admin';
 
 if (!admin.apps.length) {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -34,10 +42,52 @@ export async function generateCustomToken(publicKey: string): Promise<string> {
 export async function verifyPassword(password: string): Promise<boolean> {
     const snapshot = await firestore.doc(`/admin/password`).get();
     if (!snapshot.exists) return false;
+    revalidatePath('/admin');
     return snapshot.data()?.password == password;
 }
 
-export async function fetchAdminData(): Promise<AdminPageData> {}
+export async function fetchAdminData(): Promise<AdminPageData> {
+    const modList = await firestore.collection(`moderations`).orderBy('createdAt', 'desc').get();
+    const reports = await firestore.collection(`reports`).orderBy('flaggedAt', 'desc').get();
+    const announcements = await AppDatabase.fetchAnnouncements();
+
+    const openGames = await firestore
+        .collection('games')
+        .where('opponent', '==', null)
+        .count()
+        .get();
+    const activeGames = await firestore
+        .collection('games')
+        .where('opponent', '!=', null)
+        .where('winner', '==', null)
+        .count()
+        .get();
+    const finishedGames = await firestore
+        .collection('games')
+        .where('winner', '!=', null)
+        .count()
+        .get();
+
+    const stakes = await firestore
+        .collection('games')
+        .where('winner', '!=', null)
+        .aggregate({ totalStake: AggregateField.sum(new FieldPath('pool.amount')) })
+        .get();
+
+    return {
+        stats: {
+            games: {
+                open: openGames.data().count,
+                active: activeGames.data().count,
+                finished: finishedGames.data().count,
+            },
+            totalStake: stakes.data().totalStake,
+        },
+        moderationList: modList.docs.map((doc) => doc.data()) as Moderation[],
+        flaggedGames: reports.docs.map((doc) => doc.data()) as FlaggedGame[],
+        announcements,
+    };
+}
 
 export async function addModerationAction(form: ModerationForm) {
     // * has not history, will rewrite
@@ -46,6 +96,7 @@ export async function addModerationAction(form: ModerationForm) {
         createdAt: Timestamp.now(),
     };
     await firestore.doc(`/moderations/${moderation.wallet}`).set(moderation);
+    revalidatePath('/admin');
 }
 
 export async function resolveFlaggedGame(flagId: string, status: FlaggedGameStatus) {
@@ -55,6 +106,7 @@ export async function resolveFlaggedGame(flagId: string, status: FlaggedGameStat
     report.status = status;
 
     await firestore.doc(`/reports/${flagId}`).update(report as any);
+    revalidatePath('/admin');
 }
 
 export async function createAnnouncement(title: string, content: string) {
@@ -66,6 +118,7 @@ export async function createAnnouncement(title: string, content: string) {
     };
 
     await firestore.doc(`/announcements/${announcement.id}`).set(announcement);
+    revalidatePath('/admin');
 }
 
 export async function updateAnnouncement(id: string, title: string, content: string) {
@@ -74,10 +127,13 @@ export async function updateAnnouncement(id: string, title: string, content: str
     const ann = snapshot.data() as Announcement;
     ann.title = title;
     ann.content = content;
+    ann.updatedAt = Timestamp.now();
 
     await firestore.doc(`/announcements/${ann.id}`).update(ann as any);
+    revalidatePath('/admin');
 }
 
 export async function deleteAnnouncement(id: string) {
     await firestore.doc(`/announcements/${id}`).delete();
+    revalidatePath('/admin');
 }

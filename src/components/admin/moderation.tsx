@@ -121,7 +121,7 @@ export default function ModerationPage({ moderationList }: Props) {
                     <div className='space-y-2 max-h-96 overflow-y-auto'>
                         {moderationList.map((modUser) => (
                             <Card
-                                key={modUser.wallet + modUser.lastUpdatedAt.toMillis()}
+                                key={modUser.wallet + modUser.createdAt.toMillis()}
                                 className='p-3'
                             >
                                 <p className='font-mono text-sm break-all'>
@@ -131,17 +131,17 @@ export default function ModerationPage({ moderationList }: Props) {
                                     Status:{' '}
                                     <Badge
                                         variant={
-                                            modUser.currentStatus == 'ban'
+                                            modUser.action == 'ban'
                                                 ? 'destructive'
-                                                : modUser.currentStatus == 'warn'
+                                                : modUser.action == 'warn'
                                                 ? 'secondary'
                                                 : 'default'
                                         }
                                     >
-                                        {modUser.currentStatus}
+                                        {modUser.action}
                                     </Badge>
                                 </p>
-                                {modUser.lastReason && (
+                                {/* {modUser.lastReason && (
                                     <p className='text-xs text-muted-foreground'>
                                         Last Reason: {modUser.lastReason}
                                     </p>
@@ -149,7 +149,7 @@ export default function ModerationPage({ moderationList }: Props) {
                                 <p className='text-xs text-muted-foreground'>
                                     Last Updated:{' '}
                                     {new Date(modUser.lastUpdatedAt.toMillis()).toLocaleString()}
-                                </p>
+                                </p> */}
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button
@@ -168,7 +168,7 @@ export default function ModerationPage({ moderationList }: Props) {
                                                 {modUser.wallet.substring(0, 6)}
                                                 ...
                                             </AlertDialogTitle>
-                                            <AlertDialogDescription className='max-h-60 overflow-y-auto'>
+                                            {/* <AlertDialogDescription className='max-h-60 overflow-y-auto'>
                                                 {modUser.moderationHistory
                                                     ?.slice()
                                                     .reverse()
@@ -196,7 +196,7 @@ export default function ModerationPage({ moderationList }: Props) {
                                                 {!modUser.moderationHistory?.length && (
                                                     <p>No history recorded.</p>
                                                 )}
-                                            </AlertDialogDescription>
+                                            </AlertDialogDescription> */}
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                             <AlertDialogCancel>Close</AlertDialogCancel>
