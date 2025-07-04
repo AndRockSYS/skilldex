@@ -1,5 +1,7 @@
 import { Timestamp } from 'firebase/firestore';
 
+// todo refactor the types
+
 export type ModerationAction = 'warn' | 'ban' | 'unban';
 
 export interface ModerationActionDetails {
@@ -9,7 +11,7 @@ export interface ModerationActionDetails {
     moderatorId?: string;
 }
 
-export interface ModerationEntry {
+export interface Moderation {
     wallet: string;
     currentStatus: ModerationAction;
     lastReason?: string;
@@ -17,26 +19,26 @@ export interface ModerationEntry {
     moderationHistory: ModerationActionDetails[];
 }
 
-export interface FlaggedGameEntry {
+export type FlaggedGameStatus = 'open' | 'resolved' | 'investigating';
+
+export interface FlaggedGame {
     id: string;
     gameId: number;
     reason: string;
     reporterWallet?: string;
     flaggedAt: Timestamp;
-    status: 'open' | 'resolved' | 'investigating';
-    resolutionNotes?: string;
+    status: FlaggedGameStatus;
 }
 
-export interface AnnouncementEntry {
+export interface Announcement {
     id: string;
     title: string;
     content: string;
     createdAt: Timestamp;
     updatedAt?: Timestamp;
-    isVisible: boolean;
 }
 
-export interface StatisticsEntry {
+export interface Statistics {
     totalChallenges: number;
     openChallenges: number;
     inPlayChallenges: number;
@@ -47,9 +49,9 @@ export interface StatisticsEntry {
 }
 
 export interface AdminPageData {
-    stats: StatisticsEntry;
+    stats: Statistics;
     platformWallet: string;
-    moderationList: ModerationEntry[];
-    flaggedGames: FlaggedGameEntry[];
-    announcements: AnnouncementEntry[];
+    moderationList: Moderation[];
+    flaggedGames: FlaggedGame[];
+    announcements: Announcement[];
 }

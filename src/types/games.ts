@@ -64,12 +64,7 @@ export interface Lobby {
     opponent?: Player;
     winner?: string;
 
-    turn: {
-        currentPlayerWallet: string;
-        startTimestamp: Timestamp;
-        timeLimit: number;
-    };
-
+    timeLimit: number;
     createdAt: Timestamp;
     expirationTime?: Timestamp;
 }

@@ -57,5 +57,4 @@ export interface Player {
     avatar?: string;
     score: number;
     txSignature: string;
-    lastEmoji?: { emoji: string; timestamp: Timestamp };
 }
