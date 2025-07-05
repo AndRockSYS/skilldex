@@ -7,16 +7,16 @@ export const MIN_STAKE = 0.5;
 export const MAX_STAKE = 10;
 
 export const TURN_LIMITS = [
-    { id: '5m', name: '5 Minutes (Blitz)' },
-    { id: '1h', name: '1 Hour' },
-    { id: '24h', name: '24 Hours' },
+    { id: 5 * 60 * 1000, name: '5 Minutes (Blitz)' },
+    { id: 60 * 60 * 1000, name: '1 Hour' },
+    { id: 24 * 60 * 60 * 1000, name: '24 Hours' },
 ];
 
 export const EXPIRATION_OPTIONS = [
-    { id: '1h', name: '1 Hour' },
-    { id: '4h', name: '4 Hours' },
-    { id: '12h', name: '12 Hours' },
-    { id: '24h', name: '24 Hours' },
+    { id: 60 * 60 * 1000, name: '1 Hour' },
+    { id: 4 * 60 * 60 * 1000, name: '4 Hours' },
+    { id: 12 * 60 * 1000, name: '12 Hours' },
+    { id: 24 * 60 * 60 * 1000, name: '24 Hours' },
 ];
 
 export const STATS_CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];

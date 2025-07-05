@@ -68,7 +68,7 @@ export default function CreateLobby() {
     const dispatch = useAppDispatch();
     const user = useAppSelector((state) => state.userReducer);
 
-    const { createLobby, fetchPlatformData } = useProgram();
+    const { createLobby } = useProgram();
     const wallet = useWallet();
 
     const { toast } = useToast();
@@ -80,8 +80,8 @@ export default function CreateLobby() {
             gameType: games.find((g) => g.id == Number(gameId))?.id ?? GameType.TicTacToe,
             token: Token.SOL,
             stake: Number(stake) ?? MIN_STAKE,
-            expiration: '1h',
-            turnTimeLimit: '3600',
+            expiration: EXPIRATION_OPTIONS[0].id,
+            turnTimeLimit: TURN_LIMITS[0].id,
             matchFormat: Object.values(MatchFormat).includes(formatId)
                 ? (formatId as MatchFormat)
                 : MatchFormat.Single,
@@ -95,7 +95,6 @@ export default function CreateLobby() {
         async (form: LobbyForm) => {
             if (!wallet.publicKey) return;
 
-            // todo check and convert time to milliseconds
             const initialBet = Math.floor(form.stake * LAMPORTS_PER_SOL);
             const expirationTime = Math.floor(new Date(form.expiration).getTime() / 1000);
             const turnTime = Number(form.turnTimeLimit);
@@ -351,7 +350,7 @@ export default function CreateLobby() {
                                         </FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
-                                            defaultValue={field.value}
+                                            defaultValue={field.value.toString()}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
@@ -360,7 +359,10 @@ export default function CreateLobby() {
                                             </FormControl>
                                             <SelectContent>
                                                 {EXPIRATION_OPTIONS.map((option) => (
-                                                    <SelectItem key={option.id} value={option.id}>
+                                                    <SelectItem
+                                                        key={option.id}
+                                                        value={option.id.toString()}
+                                                    >
                                                         {option.name}
                                                     </SelectItem>
                                                 ))}
@@ -386,7 +388,7 @@ export default function CreateLobby() {
                                         </FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
-                                            defaultValue={field.value}
+                                            defaultValue={field.value.toString()}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
@@ -395,7 +397,10 @@ export default function CreateLobby() {
                                             </FormControl>
                                             <SelectContent>
                                                 {TURN_LIMITS.map((option) => (
-                                                    <SelectItem key={option.id} value={option.id}>
+                                                    <SelectItem
+                                                        key={option.id}
+                                                        value={option.id.toString()}
+                                                    >
                                                         {option.name}
                                                     </SelectItem>
                                                 ))}

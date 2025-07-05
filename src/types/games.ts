@@ -17,8 +17,8 @@ export enum GameState {
 
 export enum GameType {
     TicTacToe,
+    ConnectFour,
     RockPaperScissors,
-    FourInARow,
 }
 
 export const getGameName = (game: GameType): string => {
@@ -27,7 +27,7 @@ export const getGameName = (game: GameType): string => {
             return 'Tic Tac Toe';
         case GameType.RockPaperScissors:
             return 'Rock Paper Scissors';
-        case GameType.FourInARow:
+        case GameType.ConnectFour:
             return 'Four in a Row';
     }
 };
