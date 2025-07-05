@@ -6,24 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2 } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
 
-import { useQuery } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useMemo, useState } from 'react';
+import useProgram from '@/hooks/use-program';
 
-import { getPlatformWallet } from '@/lib/solana';
+import { web3 } from '@coral-xyz/anchor';
+import { getPlatformPubKey } from '@/lib/solana';
 
 export default function Settings() {
-    const { data: platformWallet } = useQuery({
-        queryKey: ['admin', 'wallet'],
-        queryFn: async () => await getPlatformWallet(),
-    });
+    const platformWallet = useMemo(() => getPlatformPubKey().toString(), []);
+    const { updatePlatform, isProcessing } = useProgram();
 
-    // todo rewrite form with the hook
-
-    const [newPlatform, setNewPlatform] = useState<string>();
-    const [isProcessing, setIsProcessing] = useState(false);
-    const handleUpdatePlatform = useCallback(() => {
-        // todo add wallet updaing
-    }, []);
+    const [newPlatform, setNewPlatform] = useState<string>('');
 
     return (
         <TabsContent value='settings' className='mt-6'>
@@ -40,7 +33,10 @@ export default function Settings() {
                     ) : (
                         <p className='text-lg text-muted-foreground'>Not set.</p>
                     )}
-                    <form onSubmit={handleUpdatePlatform} className='mt-6 space-y-4'>
+                    <form
+                        onSubmit={async () => await updatePlatform(new web3.PublicKey(newPlatform))}
+                        className='mt-6 space-y-4'
+                    >
                         <div>
                             <label
                                 htmlFor='newWalletAddress'

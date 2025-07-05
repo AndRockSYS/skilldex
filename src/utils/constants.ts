@@ -26,3 +26,11 @@ export const REWARD_POINTS = {
     played: 10,
     won: 0,
 };
+
+export const PROGRAM_ADDRESS = '';
+
+export const PDA_AFFIXES = {
+    lobby: 'lobby',
+    platform: 'platform',
+    suffix: 'skilldexQsdhdff3',
+};

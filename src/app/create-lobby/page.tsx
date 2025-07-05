@@ -39,18 +39,25 @@ import {
 import SuccessCreation from '@/components/create-lobby/success-creation';
 
 import { useForm } from 'react-hook-form';
-import useLobby from '@/hooks/use-lobby';
+import useProgram from '@/hooks/use-program';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useSearchParams } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { useCallback, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 
+import GameDatabase from '@/lib/firebase/games';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LobbyForm, lobbySchema } from '@/lib/zod';
+import { addGame } from '@/lib/redux/slice/user';
 
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { EXPIRATION_OPTIONS, MIN_STAKE, PLATFORM_COMMISSION, TURN_LIMITS } from '@/utils/constants';
 import { games } from '@/content/games';
 
 import { getTokenName, Token } from '@/types/utils';
-import { GameType, getMatchFormatName, MatchFormat } from '@/types/games';
+import { GameState, GameType, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
+import { Timestamp } from 'firebase/firestore';
 
 export default function CreateLobby() {
     const searchParams = useSearchParams();
@@ -58,8 +65,13 @@ export default function CreateLobby() {
     const gameId = searchParams.get('gameId');
     const matchFormatId = searchParams.get('matchFormatId');
 
-    const { createLobby, lobby } = useLobby();
+    const dispatch = useAppDispatch();
+    const user = useAppSelector((state) => state.userReducer);
+
+    const { createLobby, fetchPlatformData } = useProgram();
     const wallet = useWallet();
+
+    const { toast } = useToast();
 
     const formatId = Number(matchFormatId ?? 0);
     const form = useForm<LobbyForm>({
@@ -78,7 +90,64 @@ export default function CreateLobby() {
 
     const watchedStake = form.watch('stake');
 
-    if (form.formState.isSubmitted && lobby) return <SuccessCreation lobby={lobby} />;
+    const [lobby, setLobby] = useState<Lobby>();
+    const handleLobbyCreation = useCallback(
+        async (form: LobbyForm) => {
+            if (!wallet.publicKey) return;
+
+            // todo check and convert time to milliseconds
+            const initialBet = Math.floor(form.stake * LAMPORTS_PER_SOL);
+            const expirationTime = Math.floor(new Date(form.expiration).getTime() / 1000);
+            const turnTime = Number(form.turnTimeLimit);
+
+            const result = await createLobby(form.gameType, initialBet, expirationTime);
+
+            if (!result) {
+                toast({
+                    title: 'Tx Error',
+                    description: 'Your transaction was not submitted.',
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            const platformData = await fetchPlatformData();
+
+            const lobby: Lobby = {
+                id: platformData?.currentId.toNumber - 1,
+                state: GameState.Open,
+                gameType: form.gameType,
+                format: form.matchFormat,
+
+                pool: {
+                    initial: initialBet,
+                    token: Token.SOL,
+                },
+
+                creator: {
+                    wallet: wallet.publicKey?.toString(),
+                    name: user.name,
+                    avatar: user.avatar,
+                    score: 0,
+                    txSignature: result.signature,
+                },
+
+                timeLimit: turnTime,
+                createdAt: Timestamp.now(),
+            };
+
+            await dispatch(addGame({ wallet: wallet.publicKey.toString(), gameType: 'created' }));
+            await GameDatabase.createLobby(lobby);
+
+            if (expirationTime)
+                lobby.expirationTime = Timestamp.fromMillis(Date.now() + expirationTime);
+
+            setLobby(lobby);
+        },
+        [wallet, user, lobby]
+    );
+
+    if (lobby) return <SuccessCreation lobby={lobby} />;
 
     return (
         <div className='max-w-2xl mx-auto p-4 sm:p-0'>
@@ -95,7 +164,10 @@ export default function CreateLobby() {
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(createLobby)} className='space-y-6'>
+                        <form
+                            onSubmit={form.handleSubmit(handleLobbyCreation)}
+                            className='space-y-6'
+                        >
                             <FormField
                                 control={form.control}
                                 name='gameType'
