@@ -4,7 +4,7 @@ import { useToast } from './use-toast';
 
 import { getPlatform } from '@/actions';
 
-import { getPlatformPubKey, initProgram } from '@/lib/solana';
+import { getPlatformPubKey, initProgram, parseEventLogs } from '@/lib/solana';
 import { web3 } from '@coral-xyz/anchor';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 
@@ -68,8 +68,9 @@ const useProgram = () => {
 
             const platform_signer = web3.Keypair.fromSecretKey(await getPlatform());
 
-            const tx = await initProgram(wallet, connection)
-                .methods.createLobby(gameType, bet, expireTime)
+            const program = initProgram(wallet, connection);
+            const tx = await program.methods
+                .createLobby(gameType, bet, expireTime)
                 .accounts({
                     //@ts-ignore
                     platform_signer: platform_signer.publicKey,
@@ -78,7 +79,14 @@ const useProgram = () => {
                 .signers([platform_signer])
                 .transaction();
 
-            return await completeTransaction(tx);
+            const data = await completeTransaction(tx);
+            if (!data || data.error) return;
+
+            const logs = await parseEventLogs(connection, data.signature, program);
+            for (let event of logs) {
+                if (event.name == 'LobbyCreation')
+                    return { lobbyId: event.data.lobby_id, signature: data.signature };
+            }
         },
         [connection, wallet]
     );

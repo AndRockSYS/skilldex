@@ -8,8 +8,14 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, Coins, Clock, Eye, History, Loader2, ShieldAlert } from 'lucide-react';
+import { Wallet, Coins, Clock, Eye, History, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+
+import useProgram from '@/hooks/use-program';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
@@ -29,6 +35,45 @@ interface Props {
 }
 
 export default function LobbiesTable({ lobbies, status }: Props) {
+    const router = useRouter();
+    const { toast } = useToast();
+
+    // todo implement queue from realtime database
+    const hasQueue = false;
+    const joiningQueue = false;
+
+    const { publicKey } = useWallet();
+    const { joinLobby, isProcessing } = useProgram();
+
+    const handleLobbyJoin = useCallback(
+        async (lobbyId: number) => {
+            try {
+                // todo check and update the queue
+                // todo add timer for user to join
+
+                await joinLobby(lobbyId);
+
+                toast({
+                    title: 'Tx Submitted',
+                    description: 'Transaction was submitted successfully.',
+                    variant: 'default',
+                });
+
+                // todo update lobby
+
+                router.push(`/game/${lobbyId}`);
+            } catch (error: any) {
+                toast({
+                    title: 'Join Failed',
+                    description: 'An error occurred while joining the demo game.',
+                    variant: 'destructive',
+                    duration: 9000,
+                });
+            }
+        },
+        [publicKey, joinLobby]
+    );
+
     if (lobbies.length === 0)
         return <p className='text-center py-8 text-muted-foreground'>No lobbys were found.</p>;
 
@@ -137,53 +182,36 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                     </TableCell>
                                 )}
                                 <TableCell className='text-right'>
-                                    {/* {status == GameState.Open && (
-										todo remake status showing, make queue to escape collision
+                                    {status == GameState.Open && (
                                         <Button
                                             variant='outline'
                                             size='sm'
-                                            onClick={() => handleJoinlobby(lobby)}
+                                            onClick={() => handleLobbyJoin(lobby.id)}
                                             disabled={
-                                                !wallet.publicKey ||
-                                                lobby.playerCount >= lobby.maxPlayers ||
-                                                (wallet.publicKey &&
-                                                    lobby.creatorWallet ===
-                                                        wallet.publicKey.toBase58()) ||
-                                                joiningGameId === lobby.id ||
-                                                isFetchingBalance ||
-                                                !hasSufficientXNT ||
-                                                !lobby.initializeTxSig
+                                                !!lobby.opponent ||
+                                                !publicKey ||
+                                                publicKey.toString() == lobby.creator.wallet ||
+                                                hasQueue
                                             }
                                             className='whitespace-nowrap'
                                         >
-                                            {joiningGameId === lobby.id ? (
-                                                <>
-                                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                                    Staking...
-                                                </>
-                                            ) : isFetchingBalance && !joiningGameId ? (
-                                                <>
-                                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                                    Balance...
-                                                </>
-                                            ) : !lobby.initializeTxSig ? (
-                                                <>
-                                                    <ShieldAlert className='mr-2 h-4 w-4 text-destructive' />
-                                                    Initializing
-                                                </>
-                                            ) : lobby.playerCount >= lobby.maxPlayers ? (
-                                                'Full'
-                                            ) : wallet.publicKey &&
-                                              lobby.creatorWallet ===
-                                                  wallet.publicKey.toBase58() ? (
-                                                'Your Game'
-                                            ) : !hasSufficientXNT ? (
-                                                `Low ${lobby.token}`
-                                            ) : (
-                                                'Join & Stake'
-                                            )}
+                                            {publicKey?.toString() == lobby.creator.wallet &&
+                                                'Your Game'}
+                                            {!!lobby.opponent && 'Full'}
+                                            {isProcessing ||
+                                                (joiningQueue && (
+                                                    <>
+                                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                                        Joining...
+                                                    </>
+                                                ))}
+                                            {hasQueue && 'Has queue'}
+                                            {!hasQueue &&
+                                                !lobby.opponent &&
+                                                !isProcessing &&
+                                                'Join & Stake'}
                                         </Button>
-                                    )} */}
+                                    )}
                                     {(status == GameState.Active ||
                                         status == GameState.Finished) && (
                                         <Button

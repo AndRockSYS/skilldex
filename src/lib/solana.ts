@@ -1,6 +1,6 @@
 import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
 import { AnchorWallet } from '@solana/wallet-adapter-react';
-import { AnchorProvider, Program } from '@coral-xyz/anchor';
+import { AnchorProvider, BorshCoder, EventParser, Program } from '@coral-xyz/anchor';
 
 import { IDL, Skilldex } from '@/data/program-idl';
 import { PDA_AFFIXES } from '@/utils/constants';
@@ -36,4 +36,19 @@ export const getLobbyAddress = (lobbyId: number): PublicKey => {
         new PublicKey(IDL.address)
     );
     return lobby;
+};
+
+export const parseEventLogs = async (
+    connection: Connection,
+    signature: string,
+    program: Program<Skilldex>
+) => {
+    const tx = await connection.getTransaction(signature, {
+        commitment: 'confirmed',
+    });
+    const eventParser = new EventParser(program.programId, new BorshCoder(program.idl));
+    if (!tx?.meta?.logMessages) return [];
+
+    const events = eventParser.parseLogs(tx.meta.logMessages);
+    return events;
 };

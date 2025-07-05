@@ -100,21 +100,19 @@ export default function CreateLobby() {
             const expirationTime = Math.floor(new Date(form.expiration).getTime() / 1000);
             const turnTime = Number(form.turnTimeLimit);
 
-            const result = await createLobby(form.gameType, initialBet, expirationTime);
+            const response = await createLobby(form.gameType, initialBet, expirationTime);
 
-            if (!result) {
+            if (!response) {
                 toast({
                     title: 'Tx Error',
-                    description: 'Your transaction was not submitted.',
+                    description: 'No lobby is was found in tx logs.',
                     variant: 'destructive',
                 });
                 return;
             }
 
-            const platformData = await fetchPlatformData();
-
             const lobby: Lobby = {
-                id: platformData?.currentId.toNumber - 1,
+                id: response.lobbyId,
                 state: GameState.Open,
                 gameType: form.gameType,
                 format: form.matchFormat,
@@ -129,7 +127,7 @@ export default function CreateLobby() {
                     name: user.name,
                     avatar: user.avatar,
                     score: 0,
-                    txSignature: result.signature,
+                    txSignature: response.signature,
                 },
 
                 timeLimit: turnTime,
