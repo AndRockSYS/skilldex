@@ -18,6 +18,7 @@ export const EXPIRATION_OPTIONS = [
     { id: 12 * 60 * 1000, name: '12 Hours' },
     { id: 24 * 60 * 60 * 1000, name: '24 Hours' },
 ];
+export const QUEUE_TIME_LIMIT = 2 * 60 * 1000;
 
 export const STATS_CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 

@@ -27,7 +27,7 @@ import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import GameDatabase from '@/lib/firebase/game-database';
+import GameDatabase from '@/lib/firebase/games';
 
 import { games } from '@/content/games';
 
@@ -82,11 +82,11 @@ export default function LobbyPage() {
 
         const parsedMinStake = parseFloat(minStake);
         if (!isNaN(parsedMinStake))
-            filtered = filtered.filter((challenge) => challenge.pool.amount >= parsedMinStake);
+            filtered = filtered.filter((challenge) => challenge.pool.initial >= parsedMinStake);
 
         const parsedMaxStake = parseFloat(maxStake);
         if (!isNaN(parsedMaxStake))
-            filtered = filtered.filter((challenge) => challenge.pool.amount <= parsedMaxStake);
+            filtered = filtered.filter((challenge) => challenge.pool.initial <= parsedMaxStake);
 
         return filtered;
     }, [lobbies, searchTerm, gameType, minStake, maxStake]);

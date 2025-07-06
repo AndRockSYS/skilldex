@@ -16,6 +16,9 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/lib/redux/hooks';
+
+import GameDatabase from '@/lib/firebase/games';
 
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
@@ -28,7 +31,6 @@ import {
 
 import { GameState, getGameName, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
 import { getTokenName } from '@/types/utils';
-
 interface Props {
     lobbies: Lobby[];
     status: GameState;
@@ -38,40 +40,57 @@ export default function LobbiesTable({ lobbies, status }: Props) {
     const router = useRouter();
     const { toast } = useToast();
 
-    // todo implement queue from realtime database
-    const hasQueue = false;
-    const joiningQueue = false;
-
+    const { name, avatar } = useAppSelector((state) => state.userReducer);
     const { publicKey } = useWallet();
     const { joinLobby, isProcessing } = useProgram();
 
     const handleLobbyJoin = useCallback(
         async (lobbyId: number) => {
-            try {
-                // todo check and update the queue
-                // todo add timer for user to join
+            if (!publicKey) return;
 
-                await joinLobby(lobbyId);
+            try {
+                const { success, message } = await GameDatabase.enqueue(
+                    lobbyId,
+                    publicKey.toString()
+                );
 
                 toast({
-                    title: 'Tx Submitted',
-                    description: 'Transaction was submitted successfully.',
+                    title: success ? 'Success' : 'Cannot Proceed',
+                    description: message,
                     variant: 'default',
                 });
 
-                // todo update lobby
+                if (!success) return;
+                // todo add timer to dequeue
+
+                const data = await joinLobby(lobbyId);
+                if (!data) throw new Error('Tx was not submitted');
+
+                await GameDatabase.addOpponent(lobbyId, {
+                    wallet: publicKey.toString(),
+                    name,
+                    avatar,
+                    score: 0,
+                    txSignature: data?.signature,
+                });
+
+                toast({
+                    title: 'Tx Submitted',
+                    description: 'Redirecting to the game page.',
+                    variant: 'default',
+                });
 
                 router.push(`/game/${lobbyId}`);
             } catch (error: any) {
                 toast({
                     title: 'Join Failed',
-                    description: 'An error occurred while joining the demo game.',
+                    description: error.message ?? 'An error occurred while joining the demo game.',
                     variant: 'destructive',
                     duration: 9000,
                 });
             }
         },
-        [publicKey, joinLobby]
+        [publicKey, name, avatar, joinLobby]
     );
 
     if (lobbies.length === 0)
@@ -190,26 +209,21 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                             disabled={
                                                 !!lobby.opponent ||
                                                 !publicKey ||
-                                                publicKey.toString() == lobby.creator.wallet ||
-                                                hasQueue
+                                                publicKey.toString() == lobby.creator.wallet
                                             }
                                             className='whitespace-nowrap'
                                         >
                                             {publicKey?.toString() == lobby.creator.wallet &&
                                                 'Your Game'}
                                             {!!lobby.opponent && 'Full'}
-                                            {isProcessing ||
-                                                (joiningQueue && (
-                                                    <>
-                                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                                        Joining...
-                                                    </>
-                                                ))}
-                                            {hasQueue && 'Has queue'}
-                                            {!hasQueue &&
-                                                !lobby.opponent &&
-                                                !isProcessing &&
-                                                'Join & Stake'}
+                                            {isProcessing && (
+                                                <>
+                                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                                    Joining...
+                                                </>
+                                            )}
+
+                                            {!lobby.opponent && !isProcessing && 'Join & Stake'}
                                         </Button>
                                     )}
                                     {(status == GameState.Active ||

@@ -10,7 +10,7 @@ import { useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import GameDatabase from '@/lib/firebase/game-database';
+import GameDatabase from '@/lib/firebase/games';
 
 import { MatchFormat } from '@/types/games';
 
@@ -70,11 +70,11 @@ export default function WinPage() {
             gameType={lobbyData.gameType}
             matchFormat={lobbyData.format}
             isWinner={lobbyData.winner ? lobbyData.winner == publicKey.toString() : false}
-            stake={{ pool: BigInt(lobbyData.pool.amount), token: lobbyData.pool.token }}
+            stake={{ pool: BigInt(lobbyData.pool.initial * 2), token: lobbyData.pool.token }}
             scores={
                 lobbyData.format == MatchFormat.Single
                     ? undefined
-                    : { creator: lobbyData.score.creator, oponent: lobbyData.score.opponent }
+                    : { creator: lobbyData.creator.score, oponent: lobbyData.opponent?.score ?? 0 }
             }
         />
     );

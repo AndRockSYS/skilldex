@@ -68,3 +68,8 @@ export interface Lobby {
     createdAt: Timestamp;
     expirationTime?: Timestamp;
 }
+
+export interface QueuePlayer {
+    wallet: string;
+    timestamp: Timestamp;
+}
