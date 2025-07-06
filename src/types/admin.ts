@@ -1,7 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
 
-// todo refactor the types
-
 export type ModerationAction = 'warn' | 'ban' | 'unban';
 
 export interface Moderation {
@@ -37,7 +35,6 @@ export interface Statistics {
         finished: number;
     };
     totalStake: number;
-    // statusDistribution: Array<{ name: string; value: number }>;
 }
 
 export interface AdminPageData {
