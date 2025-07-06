@@ -17,7 +17,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
-import { generateChallengeTaunt } from '@/ai/flows/generate-challenge-taunt-flow';
+import { generateChallengeTaunt } from '@/lib/ai/flows/generate-challenge-taunt-flow';
 
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 

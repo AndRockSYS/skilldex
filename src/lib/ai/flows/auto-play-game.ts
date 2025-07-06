@@ -8,7 +8,7 @@
  * - AutoPlayGameOutput - The return type for the autoPlayGame function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '@/lib/ai/genkit';
 import { z } from 'genkit';
 
 // todo implement auto play for an AI
