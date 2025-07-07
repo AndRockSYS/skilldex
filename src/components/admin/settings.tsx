@@ -12,21 +12,26 @@ import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
 import { web3 } from '@coral-xyz/anchor';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 export default function Settings() {
     const { toast } = useToast();
-    const { initializePlatform, updatePlatform, isProcessing, fetchPlatformData } = useProgram();
+    const {
+        initializePlatform,
+        updatePlatform,
+        withdrawCommission,
+        isProcessing,
+        fetchPlatformData,
+    } = useProgram();
 
     const {
-        data: platformSigner,
+        data: platformData,
         isError,
+        isFetching,
         refetch,
     } = useQuery({
         queryKey: ['admin', 'platform'],
-        queryFn: async () => {
-            const data = await fetchPlatformData();
-            return data?.platform_signer.toString();
-        },
+        queryFn: async () => await fetchPlatformData(),
     });
 
     const [newPlatform, setNewPlatform] = useState<string>('');
@@ -53,11 +58,13 @@ export default function Settings() {
                     <CardDescription>This wallet receives the platform fees.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isError ? (
+                    {isFetching ? (
+                        <p className='text-lg text-muted-foreground'>Loading</p>
+                    ) : isError ? (
                         <p className='text-lg text-muted-foreground'>Not initialized</p>
                     ) : (
                         <p className='text-sm sm:text-lg font-mono bg-muted p-3 rounded-md break-all'>
-                            {platformSigner}
+                            {platformData?.platform_signer.toString()}
                         </p>
                     )}
                     <form
@@ -92,12 +99,40 @@ export default function Settings() {
                         </div>
                         <Button
                             type='submit'
-                            disabled={isProcessing || newPlatform == platformSigner}
+                            disabled={
+                                isProcessing ||
+                                newPlatform == platformData?.platform_signer.toString()
+                            }
                         >
                             {isProcessing && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                             Update Wallet
                         </Button>
                     </form>
+                </CardContent>
+            </Card>
+            <Card className='mt-6'>
+                <CardContent>
+                    <CardHeader className='px-0'>
+                        <CardTitle>Withdraw Commission</CardTitle>{' '}
+                        <CardDescription>Withdraw funds from platform</CardDescription>
+                    </CardHeader>
+                    {isFetching ? (
+                        <p className='text-lg text-muted-foreground'>Loading</p>
+                    ) : isError ? (
+                        <p className='text-lg text-muted-foreground'>Not initialized</p>
+                    ) : (
+                        <p className='text-sm sm:text-lg font-mono bg-muted p-3 rounded-md break-all'>
+                            {(platformData?.balance.toNumber() / LAMPORTS_PER_SOL).toFixed(4)}
+                        </p>
+                    )}
+                    <Button
+                        className='mt-6'
+                        disabled={isProcessing}
+                        onClick={() => withdrawCommission()}
+                    >
+                        {isProcessing && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                        Withdraw
+                    </Button>
                 </CardContent>
             </Card>
         </TabsContent>
