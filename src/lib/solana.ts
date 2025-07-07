@@ -1,21 +1,15 @@
-import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
+import { Connection, PublicKey } from '@solana/web3.js';
 import { AnchorWallet } from '@solana/wallet-adapter-react';
 import { AnchorProvider, BorshCoder, EventParser, Program } from '@coral-xyz/anchor';
+
+import { connection } from '@/config/solana';
 
 import { IDL, Skilldex } from '@/data/program-idl';
 import { PDA_AFFIXES } from '@/utils/constants';
 
-export const clusterConnection = new Connection(
-    clusterApiUrl(process.env.NEXT_PUBLIC_RPC_ENV as any),
-    'confirmed'
-);
-
-export const initProgram = (
-    wallet: AnchorWallet,
-    connection: Connection = clusterConnection
-): Program<Skilldex> => {
-    const provider = new AnchorProvider(connection, wallet as any, { commitment: 'confirmed' });
-    return new Program<Skilldex>(IDL as Skilldex, provider);
+export const initProgram = (wallet: AnchorWallet): Program<Skilldex> => {
+    const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
+    return new Program<Skilldex>(IDL, provider);
 };
 
 export const getPlatformPubKey = (): PublicKey => {

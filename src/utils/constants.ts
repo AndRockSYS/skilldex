@@ -28,7 +28,7 @@ export const REWARD_POINTS = {
     won: 0,
 };
 
-export const PROGRAM_ADDRESS = '';
+export const PROGRAM_ADDRESS = '3AnV7hxNbvc2N83MHrMoVm4S9KdBZb16Shsz6f43VE1w';
 
 export const PDA_AFFIXES = {
     lobby: 'lobby',
