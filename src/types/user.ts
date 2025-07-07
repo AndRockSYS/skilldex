@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import { Timestamp } from './utils';
 
 export interface UserStats {
     walletAddress: string;

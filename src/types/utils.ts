@@ -13,3 +13,5 @@ export interface LobbyDisplayStatus {
     text: string;
     variant: 'default' | 'secondary' | 'destructive' | 'outline';
 }
+
+export type Timestamp = number;

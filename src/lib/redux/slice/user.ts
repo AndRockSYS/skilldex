@@ -3,7 +3,7 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import AppDatabase from '@/lib/firebase/client';
 
 import { UserStats } from '@/types/user';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp } from '@/types/utils';
 import { REWARD_POINTS } from '@/utils/constants';
 
 const initialState: UserStats = {
@@ -18,7 +18,7 @@ const initialState: UserStats = {
         gameSound: true,
         browser: true,
     },
-    lastActivity: Timestamp.now(),
+    lastActivity: Date.now(),
 };
 
 export const userSlice = createSlice({
@@ -51,10 +51,7 @@ export const fetchUser = createAsyncThunk(
 
 export const addGame = createAsyncThunk(
     'user/addGame',
-    async (
-        { wallet, gameType }: { wallet: string; gameType: 'created' | 'played' | 'won' },
-        { getState }
-    ) => {
+    async ({ gameType }: { gameType: 'created' | 'played' | 'won' }, { getState }) => {
         let user = getState() as UserStats;
 
         user.games[gameType]++;
@@ -67,10 +64,7 @@ export const addGame = createAsyncThunk(
 
 export const updateUserField = createAsyncThunk(
     'user/updateUserField',
-    async (
-        { wallet, name, value }: { wallet: string; name: 'name' | 'avatar'; value: string },
-        { getState }
-    ) => {
+    async ({ name, value }: { name: 'name' | 'avatar'; value: string }, { getState }) => {
         let user = getState() as UserStats;
 
         user[name] = value;
@@ -81,8 +75,8 @@ export const updateUserField = createAsyncThunk(
 );
 
 export const updateLastActivity = createAsyncThunk(
-    'user/fetchUser',
-    async ({ wallet, timestamp }: { wallet: string; timestamp: Timestamp }, { getState }) => {
+    'user/updateLastActivity',
+    async ({ timestamp }: { timestamp: Timestamp }, { getState }) => {
         let user = getState() as UserStats;
 
         user.lastActivity = timestamp;

@@ -9,7 +9,6 @@ import {
     orderBy,
     query,
     setDoc,
-    Timestamp,
     updateDoc,
 } from 'firebase/firestore';
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
@@ -21,7 +20,8 @@ import config from '@/config/firebase.json';
 import { generateUID } from '@/utils/generator';
 
 import { UserStats } from '@/types/user';
-import { Announcement } from '@/types/announcement';
+import { Timestamp } from '@/types/utils';
+import { Announcement } from '@/types/admin';
 
 export default class AppDatabase {
     static app = initializeApp(config);
@@ -51,7 +51,7 @@ export default class AppDatabase {
                 gameSound: true,
                 browser: true,
             },
-            lastActivity: Timestamp.now(),
+            lastActivity: Date.now(),
         };
         await setDoc(userRef, newUser);
         return newUser;
@@ -102,7 +102,7 @@ export default class AppDatabase {
             gameId,
             reason,
             reporterWallet,
-            flaggedAt: Timestamp.now(),
+            flaggedAt: Date.now(),
             status: 'open',
         };
 

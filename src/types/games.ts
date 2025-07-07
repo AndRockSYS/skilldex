@@ -1,6 +1,6 @@
 import { LucideIcon } from 'lucide-react';
-import type { Timestamp } from 'firebase/firestore';
-import { Token } from './utils';
+
+import { Timestamp, Token } from './utils';
 import { Player } from './user';
 
 export type GameDefinition = {

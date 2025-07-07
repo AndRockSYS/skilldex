@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp } from './utils';
 
 export type ModerationAction = 'warn' | 'ban' | 'unban';
 

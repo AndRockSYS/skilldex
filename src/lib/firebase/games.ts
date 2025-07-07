@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { doc, getDoc, getFirestore, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, getFirestore, setDoc, updateDoc } from 'firebase/firestore';
 import { get, getDatabase, ref, update, remove } from 'firebase/database';
 
 import config from '@/config/firebase.json';
@@ -73,10 +73,10 @@ export default class GameDatabase {
         const userData = snapshot.val() as QueuePlayer;
         if (
             !snapshot.exists() ||
-            (snapshot.exists() && userData.timestamp.toMillis() + QUEUE_TIME_LIMIT > Date.now())
+            (snapshot.exists() && userData.timestamp + QUEUE_TIME_LIMIT > Date.now())
         ) {
             const updates: any = {};
-            updates[`/queue/${gameId}`] = { wallet, timestamp: Timestamp.now() };
+            updates[`/queue/${gameId}`] = { wallet, timestamp: Date.now() };
             await update(gameRef, updates);
             return { success: true, message: 'User was added to a queue' };
         }

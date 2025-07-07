@@ -5,7 +5,7 @@ import { games } from '@/content/games';
 
 import { LobbyDisplayStatus, Token } from '@/types/utils';
 import { GameState, GameType, Lobby } from '@/types/games';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp } from '@/types/utils';
 
 export const formatTokenAmount = (amount: number | BigInt, token: Token): number => {
     switch (token) {
@@ -48,7 +48,7 @@ export function getLobbyDisplayStatus(lobby: Lobby): LobbyDisplayStatus {
 
 export function formatExpirationTime(expirationTime?: Timestamp): string {
     return expirationTime
-        ? new Date(expirationTime.toDate()).toLocaleTimeString([], {
+        ? new Date(expirationTime).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
               day: '2-digit',
