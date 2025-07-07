@@ -12,15 +12,16 @@ import {
     UserCog,
     Flag,
     Megaphone,
-    Settings,
+    Settings as SettingsIcon,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Statistics from '@/components/admin/statistics';
 import Moderation from '@/components/admin/moderation';
 import FlaggedGames from '@/components/admin/flagged-games';
 import Announcements from '@/components/lobby/announcements';
+import Settings from '@/components/admin/settings';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,10 +31,14 @@ export default function AdminPage() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
-    const isAuthed = useMemo(() => !!sessionStorage.getItem('isAdmin'), [sessionStorage]);
-    const [actionPassword, setActionPassword] = useState('');
+    const [isAuthed, setIsAuthed] = useState(false);
     const [loginPassword, setLoginPassword] = useState('');
     const [isLogging, setIsLogging] = useState(false);
+
+    useEffect(() => {
+        const data = sessionStorage.getItem('isAdminAuthenticated');
+        setIsAuthed(data == 'true');
+    }, []);
 
     const {
         data: adminData,
@@ -45,22 +50,35 @@ export default function AdminPage() {
         enabled: isAuthed,
     });
 
-    const handleLogin = useCallback(async (event: React.FormEvent) => {
-        event.preventDefault();
+    const handleLogin = useCallback(
+        async (event: React.FormEvent) => {
+            try {
+                event.preventDefault();
+                setIsLogging(true);
 
-        setIsLogging(true);
-        const result = await verifyPassword(loginPassword);
+                const result = await verifyPassword(loginPassword);
 
-        if (result) sessionStorage.setItem('isAdminAuthenticated', 'true');
-        else
-            toast({
-                title: 'Authentication Failed',
-                description: 'Invalid password.',
-                variant: 'destructive',
-            });
-
-        setIsLogging(false);
-    }, []);
+                if (result) {
+                    sessionStorage.setItem('isAdminAuthenticated', 'true');
+                    setIsAuthed(true);
+                } else
+                    toast({
+                        title: 'Authentication Failed',
+                        description: 'Invalid password.',
+                        variant: 'destructive',
+                    });
+            } catch (error) {
+                toast({
+                    title: 'Authentication Failed',
+                    description: 'An error occured during authentication.',
+                    variant: 'destructive',
+                });
+            } finally {
+                setIsLogging(false);
+            }
+        },
+        [loginPassword]
+    );
 
     const handleLogout = useCallback(() => {
         sessionStorage.removeItem('isAdminAuthenticated');
@@ -129,24 +147,6 @@ export default function AdminPage() {
                 </Button>
             </div>
 
-            <Card className='mb-6'>
-                <CardHeader>
-                    <CardTitle>Admin Action Password</CardTitle>
-                    <CardDescription>
-                        Enter the admin password below to authorize sensitive actions on this page.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Input
-                        type='password'
-                        placeholder='Admin Password for Actions'
-                        value={actionPassword}
-                        onChange={(e) => setActionPassword(e.target.value)}
-                        className='max-w-sm'
-                    />
-                </CardContent>
-            </Card>
-
             <Tabs defaultValue='overview' className='w-full'>
                 <TabsList className='grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'>
                     <TabsTrigger value='overview'>
@@ -166,7 +166,7 @@ export default function AdminPage() {
                         Announcements
                     </TabsTrigger>
                     <TabsTrigger value='settings'>
-                        <Settings className='mr-2 h-4 w-4' />
+                        <SettingsIcon className='mr-2 h-4 w-4' />
                         Platform Settings
                     </TabsTrigger>
                 </TabsList>

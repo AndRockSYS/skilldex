@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, History } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
 import {
     Select,
@@ -13,16 +13,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    AlertDialog,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 
 import { useCallback } from 'react';
@@ -51,9 +41,9 @@ export default function ModerationPage({ moderationList }: Props) {
         },
     });
 
-    const handleModerationSubmit = useCallback(async (data: ModerationForm) => {
+    const handleModerationSubmit = useCallback(async () => {
         try {
-            await addModerationAction(data);
+            await addModerationAction(form.getValues());
             toast({
                 title: 'Success',
                 description: 'Moderation was submitted successfully!',
@@ -65,7 +55,7 @@ export default function ModerationPage({ moderationList }: Props) {
                 variant: 'destructive',
             });
         }
-    }, []);
+    }, [form]);
 
     return (
         <TabsContent value='moderation' className='mt-6'>
@@ -75,19 +65,14 @@ export default function ModerationPage({ moderationList }: Props) {
                     <CardDescription>Apply warnings or bans to user wallets.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form
-                        onSubmit={form.handleSubmit(handleModerationSubmit)}
-                        className='space-y-4 mb-6'
-                    >
+                    <form className='space-y-4 mb-6'>
                         <Input
                             type='text'
                             placeholder='User Wallet Address'
-                            value={form.getValues().wallet}
                             onChange={(e) => form.setValue('wallet', e.currentTarget.value)}
                             required
                         />
                         <Select
-                            value={form.getValues().action}
                             onValueChange={(value: ModerationAction) =>
                                 form.setValue('action', value)
                             }
@@ -103,11 +88,14 @@ export default function ModerationPage({ moderationList }: Props) {
                         </Select>
                         <Textarea
                             placeholder='Reason for action (required)'
-                            value={form.getValues().reason}
                             onChange={(e) => form.setValue('reason', e.target.value)}
                             required
                         />
-                        <Button type='submit' disabled={form.formState.isSubmitting}>
+                        <Button
+                            type='submit'
+                            disabled={form.formState.isSubmitting}
+                            onClick={handleModerationSubmit}
+                        >
                             {form.formState.isSubmitting && (
                                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             )}{' '}
@@ -120,10 +108,7 @@ export default function ModerationPage({ moderationList }: Props) {
                     )}
                     <div className='space-y-2 max-h-96 overflow-y-auto'>
                         {moderationList.map((modUser) => (
-                            <Card
-                                key={modUser.wallet + modUser.createdAt.toMillis()}
-                                className='p-3'
-                            >
+                            <Card key={modUser.wallet + modUser.createdAt} className='p-3'>
                                 <p className='font-mono text-sm break-all'>
                                     Wallet: {modUser.wallet}
                                 </p>
@@ -141,68 +126,6 @@ export default function ModerationPage({ moderationList }: Props) {
                                         {modUser.action}
                                     </Badge>
                                 </p>
-                                {/* {modUser.lastReason && (
-                                    <p className='text-xs text-muted-foreground'>
-                                        Last Reason: {modUser.lastReason}
-                                    </p>
-                                )}
-                                <p className='text-xs text-muted-foreground'>
-                                    Last Updated:{' '}
-                                    {new Date(modUser.lastUpdatedAt.toMillis()).toLocaleString()}
-                                </p> */}
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button
-                                            variant='outline'
-                                            size='sm'
-                                            className='mt-1 text-xs'
-                                        >
-                                            <History className='mr-1.5 h-3 w-3' />
-                                            View History
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>
-                                                Moderation History for{' '}
-                                                {modUser.wallet.substring(0, 6)}
-                                                ...
-                                            </AlertDialogTitle>
-                                            {/* <AlertDialogDescription className='max-h-60 overflow-y-auto'>
-                                                {modUser.moderationHistory
-                                                    ?.slice()
-                                                    .reverse()
-                                                    .map((hist, idx) => (
-                                                        <div
-                                                            key={idx}
-                                                            className='py-2 border-b last:border-b-0'
-                                                        >
-                                                            <p>
-                                                                <strong>Action:</strong>{' '}
-                                                                {hist.action}
-                                                            </p>
-                                                            <p>
-                                                                <strong>Reason:</strong>{' '}
-                                                                {hist.reason}
-                                                            </p>
-                                                            <p>
-                                                                <strong>Date:</strong>{' '}
-                                                                {new Date(
-                                                                    hist.timestamp.toMillis()
-                                                                ).toLocaleString()}
-                                                            </p>
-                                                        </div>
-                                                    ))}
-                                                {!modUser.moderationHistory?.length && (
-                                                    <p>No history recorded.</p>
-                                                )}
-                                            </AlertDialogDescription> */}
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Close</AlertDialogCancel>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
                             </Card>
                         ))}
                     </div>

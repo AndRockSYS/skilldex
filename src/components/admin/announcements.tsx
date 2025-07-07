@@ -114,15 +114,11 @@ export default function Announcements({ announcements }: Props) {
                                             {ann.content}
                                         </p>
                                         <p className='text-xs text-muted-foreground mt-1'>
-                                            Created:{' '}
-                                            {new Date(ann.createdAt.toMillis()).toLocaleString()}
+                                            Created: {new Date(ann.createdAt).toLocaleString()}
                                         </p>
                                         {ann.updatedAt && (
                                             <p className='text-xs text-muted-foreground'>
-                                                Updated:{' '}
-                                                {new Date(
-                                                    ann.updatedAt.toMillis()
-                                                ).toLocaleString()}
+                                                Updated: {new Date(ann.updatedAt).toLocaleString()}
                                             </p>
                                         )}
                                     </div>

@@ -67,7 +67,7 @@ export default function FlaggedGames({ flaggedGames }: Props) {
                                     Flagged by: {flag.reporterWallet || 'System/Unknown'}
                                 </p>
                                 <p className='text-xs text-muted-foreground'>
-                                    Date: {new Date(flag.flaggedAt.toMillis()).toLocaleString()}
+                                    Date: {new Date(flag.flaggedAt).toLocaleString()}
                                 </p>
                                 <p>
                                     Status:{' '}
