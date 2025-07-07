@@ -42,9 +42,9 @@ export default function RootLayout({
 }>) {
     return (
         <html lang='en' className='dark'>
-            <ReduxProvider>
-                <QueryProvider>
-                    <SolanaWalletProvider>
+            <SolanaWalletProvider>
+                <ReduxProvider>
+                    <QueryProvider>
                         <body
                             className={`${inter.variable} ${poppins.variable} font-body antialiased min-h-screen flex flex-col bg-background text-foreground relative`}
                         >
@@ -56,9 +56,9 @@ export default function RootLayout({
                             <Footer />
                         </body>
                         <WelcomeModal />
-                    </SolanaWalletProvider>
-                </QueryProvider>
-            </ReduxProvider>
+                    </QueryProvider>
+                </ReduxProvider>
+            </SolanaWalletProvider>
         </html>
     );
 }
