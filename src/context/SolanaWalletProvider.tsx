@@ -39,7 +39,7 @@ export default function SolanaWalletProvider({
 
     return (
         <ConnectionProvider endpoint={endpoint}>
-            <WalletProvider wallets={wallets} autoConnect={false} onError={handleWalletError}>
+            <WalletProvider wallets={wallets} autoConnect={true} onError={handleWalletError}>
                 <WalletModalProvider>{children}</WalletModalProvider>
             </WalletProvider>
         </ConnectionProvider>
