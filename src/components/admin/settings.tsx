@@ -46,7 +46,13 @@ export default function Settings() {
                             Do it only if the platform was not initialized before
                         </CardDescription>
                     </CardHeader>
-                    <Button disabled={isProcessing} onClick={() => initializePlatform()}>
+                    <Button
+                        disabled={isProcessing}
+                        onClick={async () => {
+                            await initializePlatform();
+                            refetch();
+                        }}
+                    >
                         {isProcessing && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                         Initialize
                     </Button>
@@ -128,7 +134,10 @@ export default function Settings() {
                     <Button
                         className='mt-6'
                         disabled={isProcessing}
-                        onClick={() => withdrawCommission()}
+                        onClick={async () => {
+                            await withdrawCommission();
+                            refetch();
+                        }}
                     >
                         {isProcessing && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                         Withdraw
