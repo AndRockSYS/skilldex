@@ -54,8 +54,6 @@ export default function PlayerCard({
                             variant={player.wallet == turnWallet ? 'default' : 'secondary'}
                             className='text-xs sm:text-sm'
                         >
-                            {/* // todo add for AI
-                            {player.status == PlayerStatus.AI && <Bot className='h-4 w-4 mr-1' />} */}
                             {player.wallet == turnWallet
                                 ? getStatusName(PlayerStatus.Thinking)
                                 : getStatusName(PlayerStatus.Waiting)}
