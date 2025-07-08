@@ -27,33 +27,39 @@ import { Announcement } from '@/types/admin';
 
 interface Props {
     announcements: Announcement[];
+    refetch: () => void;
 }
 
-export default function Announcements({ announcements }: Props) {
+export default function Announcements({ announcements, refetch }: Props) {
     const { toast } = useToast();
 
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const handleAnnouncementSubmit = useCallback(async () => {
-        try {
-            setIsSubmitting(true);
-            await createAnnouncement(title, content);
-            toast({
-                title: 'Success',
-                description: 'Announcement was submitted successfully!',
-            });
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'An error occurred while creating the announcement.',
-                variant: 'destructive',
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
-    }, [title, content]);
+    const handleAnnouncementSubmit = useCallback(
+        async (event: React.FormEvent) => {
+            event.preventDefault();
+            try {
+                setIsSubmitting(true);
+                await createAnnouncement(title, content);
+                toast({
+                    title: 'Success',
+                    description: 'Announcement was submitted successfully!',
+                });
+                refetch();
+            } catch (error) {
+                toast({
+                    title: 'Error',
+                    description: 'An error occurred while creating the announcement.',
+                    variant: 'destructive',
+                });
+            } finally {
+                setIsSubmitting(false);
+            }
+        },
+        [title, content]
+    );
 
     const [isDeleting, setIsDeleting] = useState(false);
     const handleDeleteAnnouncement = useCallback(async (id: string) => {
@@ -64,6 +70,7 @@ export default function Announcements({ announcements }: Props) {
                 title: 'Success',
                 description: 'Announcement was deleted successfully!',
             });
+            refetch();
         } catch (error) {
             toast({
                 title: 'Error',

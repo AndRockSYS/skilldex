@@ -18,7 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Statistics from '@/components/admin/statistics';
 import Moderation from '@/components/admin/moderation';
 import FlaggedGames from '@/components/admin/flagged-games';
-import Announcements from '@/components/lobby/announcements';
+import Announcements from '@/components/admin/announcements';
 import Settings from '@/components/admin/settings';
 
 import { useState, useCallback, useEffect } from 'react';
@@ -42,6 +42,7 @@ export default function AdminPage() {
 
     const {
         data: adminData,
+        refetch,
         error,
         isFetching: isPageLoading,
     } = useQuery({
@@ -174,7 +175,7 @@ export default function AdminPage() {
                 <Statistics stats={adminData.stats} />
                 <Moderation moderationList={adminData.moderationList} />
                 <FlaggedGames flaggedGames={adminData.flaggedGames} />
-                <Announcements />
+                <Announcements announcements={adminData.announcements} refetch={refetch} />
                 <Settings />
             </Tabs>
 

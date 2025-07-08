@@ -20,7 +20,6 @@ import config from '@/config/firebase.json';
 import { generateUID } from '@/utils/generator';
 
 import { UserStats } from '@/types/user';
-import { Timestamp } from '@/types/utils';
 import { Announcement } from '@/types/admin';
 
 export default class AppDatabase {
@@ -84,7 +83,7 @@ export default class AppDatabase {
     static async fetchAnnouncements(): Promise<Announcement[]> {
         const announcementsQuery = query(
             collection(this.firestore, 'announcements'),
-            orderBy('timestamp', 'desc'),
+            orderBy('createdAt', 'desc'),
             limit(5)
         );
 
