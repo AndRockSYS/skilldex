@@ -35,26 +35,6 @@ export const lobbySchema = z
 
 export type LobbyForm = z.infer<typeof lobbySchema>;
 
-export const generateTauntInput = z.object({
-    gameName: z.string().describe('The name of the game for the challenge.'),
-    stakeAmount: z.number().describe('The amount of tokens staked for the challenge.'),
-    token: z.string().describe('The type of token being staked (e.g., SOL).'),
-    creatorHandle: z
-        .string()
-        .optional()
-        .describe('An optional handle or identifier for the challenge creator.'),
-});
-
-export type GenerateTauntInput = z.infer<typeof generateTauntInput>;
-
-export const generateTauntOutput = z.object({
-    tauntText: z
-        .string()
-        .describe(
-            'The generated tweet-sized challenge taunt, including a {{CHALLENGE_LINK}} placeholder.'
-        ),
-});
-
 export const moderationForm = z.object({
     wallet: z.string(),
     action: z.custom<ModerationAction>(),
