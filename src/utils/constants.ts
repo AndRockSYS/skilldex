@@ -23,9 +23,9 @@ export const QUEUE_TIME_LIMIT = 2 * 60 * 1000;
 export const STATS_CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 export const REWARD_POINTS = {
-    created: 5,
-    played: 10,
-    won: 0,
+    created: 3,
+    played: 5,
+    won: 10,
 };
 
 export const PROGRAM_ADDRESS = 'FUQShdGHbGptGbQikvaEDvEEEGqChtDa1EuHQUBqQ6vQ';
