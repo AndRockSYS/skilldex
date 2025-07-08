@@ -3,7 +3,7 @@ export const PLATFORM_COMMISSION = 1;
 export const LOCAL_KEY_MODAL = 'skilldex_Modal_Value';
 export const LOCAL_KEY_ANNOUNCEMENT_TIMESTAMP = 'skilldex_Last_Announcement';
 
-export const MIN_STAKE = 0.5;
+export const MIN_STAKE = 0.1;
 export const MAX_STAKE = 10;
 
 export const TURN_LIMITS = [
@@ -28,10 +28,10 @@ export const REWARD_POINTS = {
     won: 0,
 };
 
-export const PROGRAM_ADDRESS = '3AnV7hxNbvc2N83MHrMoVm4S9KdBZb16Shsz6f43VE1w';
+export const PROGRAM_ADDRESS = 'FUQShdGHbGptGbQikvaEDvEEEGqChtDa1EuHQUBqQ6vQ';
 
 export const PDA_AFFIXES = {
     lobby: 'lobby',
     platform: 'platform',
-    suffix: 'skilldexQsdhdff3',
+    suffix: 'skilldex3gf634bf',
 };

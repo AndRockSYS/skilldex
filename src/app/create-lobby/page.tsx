@@ -57,7 +57,6 @@ import { games } from '@/content/games';
 
 import { getTokenName, Token } from '@/types/utils';
 import { GameState, GameType, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
-import { Timestamp } from 'firebase/firestore';
 
 export default function CreateLobby() {
     const searchParams = useSearchParams();
@@ -104,14 +103,14 @@ export default function CreateLobby() {
             if (!response) {
                 toast({
                     title: 'Tx Error',
-                    description: 'No lobby is was found in tx logs.',
+                    description: 'An issue occured during transaction.',
                     variant: 'destructive',
                 });
                 return;
             }
 
             const lobby: Lobby = {
-                id: response.lobbyId,
+                id: response.lobbyId.toNumber(),
                 state: GameState.Open,
                 gameType: form.gameType,
                 format: form.matchFormat,
@@ -123,21 +122,28 @@ export default function CreateLobby() {
 
                 creator: {
                     wallet: wallet.publicKey?.toString(),
-                    name: user.name,
-                    avatar: user.avatar,
                     score: 0,
                     txSignature: response.signature,
                 },
 
                 timeLimit: turnTime,
-                createdAt: Timestamp.now(),
+                createdAt: Date.now(),
+                expirationTime: Date.now() + expirationTime,
             };
 
-            await dispatch(addGame({ wallet: wallet.publicKey.toString(), gameType: 'created' }));
-            await GameDatabase.createLobby(lobby);
+            if (user.name) lobby.creator.name = user.name;
+            if (user.avatar) lobby.creator.avatar = user.avatar;
 
-            if (expirationTime)
-                lobby.expirationTime = Timestamp.fromMillis(Date.now() + expirationTime);
+            try {
+                await dispatch(addGame({ gameType: 'created' }));
+                await GameDatabase.createLobby(lobby);
+            } catch (error) {
+                toast({
+                    title: 'Database Error',
+                    description: 'An issue occured during saving your data.',
+                    variant: 'destructive',
+                });
+            }
 
             setLobby(lobby);
         },
@@ -349,7 +355,7 @@ export default function CreateLobby() {
                                             Challenge Expiration
                                         </FormLabel>
                                         <Select
-                                            onValueChange={field.onChange}
+                                            onValueChange={(value) => field.onChange(Number(value))}
                                             defaultValue={field.value.toString()}
                                         >
                                             <FormControl>
@@ -387,7 +393,7 @@ export default function CreateLobby() {
                                             Time Limit
                                         </FormLabel>
                                         <Select
-                                            onValueChange={field.onChange}
+                                            onValueChange={(value) => field.onChange(Number(value))}
                                             defaultValue={field.value.toString()}
                                         >
                                             <FormControl>

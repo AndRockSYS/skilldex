@@ -4,7 +4,7 @@ import { GameDefinition, GameType } from '@/types/games';
 
 export const games: GameDefinition[] = [
     { id: GameType.TicTacToe, name: 'Tic-Tac-Toe', icon: LayoutGrid },
-    { id: GameType.FourInARow, name: '4 in a Row', icon: Columns },
+    { id: GameType.ConnectFour, name: '4 in a Row', icon: Columns },
     { id: GameType.RockPaperScissors, name: 'Rock Paper Scissors', icon: Scissors },
 ];
 

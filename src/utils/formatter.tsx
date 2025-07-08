@@ -1,10 +1,12 @@
 import { Gamepad2 } from 'lucide-react';
 
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
-import { games } from '@/content/games';
 
-import { LobbyDisplayStatus, Token } from '@/types/utils';
-import { GameState, GameType, Lobby } from '@/types/games';
+import { games } from '@/content/games';
+import taunts from '@/content/taunts';
+
+import { getTokenName, LobbyDisplayStatus, Token } from '@/types/utils';
+import { GameState, GameType, getGameName, Lobby } from '@/types/games';
 import { Timestamp } from '@/types/utils';
 
 export const formatTokenAmount = (amount: number | BigInt, token: Token): number => {
@@ -64,4 +66,32 @@ export function isValidSolanaPublicKey(publicKey: string): boolean {
     } catch (error) {
         return false;
     }
+}
+
+export function convertGameType(game: GameType) {
+    switch (game) {
+        case GameType.TicTacToe:
+            return { ticTackToe: {} };
+        case GameType.RockPaperScissors:
+            return { rockPaperScissors: {} };
+        case GameType.ConnectFour:
+            return { connectFour: {} };
+    }
+}
+
+export function generateTaunt(
+    creatorWallet: string,
+    stakeLamports: number,
+    token: Token,
+    gameType: GameType,
+    link: string
+): string {
+    const random = Math.floor(Math.random() * 5);
+    const taunt = taunts[random];
+    return taunt
+        .replace('{creator}', creatorWallet)
+        .replace('{stakeAmount}', (stakeLamports / LAMPORTS_PER_SOL).toFixed(2))
+        .replace('{token}', getTokenName(token))
+        .replace('{gameName}', getGameName(gameType))
+        .replace('{link}', link);
 }

@@ -10,6 +10,8 @@ import { BorshCoder, web3, BN } from '@coral-xyz/anchor';
 import { IDL } from '@/data/program-idl';
 import { connection } from '@/config/solana';
 
+import { convertGameType } from '@/utils/formatter';
+
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { GameType } from '@/types/games';
 
@@ -45,6 +47,7 @@ const useProgram = () => {
 
                 return { signature: txId, error: confirmation.value.err?.toString() };
             } catch (error: any) {
+                console.log(error);
                 toast({
                     title: 'Tx Error',
                     description: error.message ?? 'Your transaction was not submitted.',
@@ -73,7 +76,11 @@ const useProgram = () => {
 
             const program = initProgram(wallet);
             const tx = await program.methods
-                .createLobby(gameType, bet, expireTime)
+                .createLobby(
+                    convertGameType(gameType),
+                    new BN(bet),
+                    new BN(Math.floor(expireTime / 1000))
+                )
                 .accounts({
                     //@ts-ignore
                     platformSigner: platformSigner.publicKey,
@@ -87,8 +94,8 @@ const useProgram = () => {
 
             const logs = await parseEventLogs(connection, data.signature, program);
             for (let event of logs) {
-                if (event.name == 'LobbyCreation')
-                    return { lobbyId: event.data.lobby_id, signature: data.signature };
+                if (event.name == 'lobbyCreation')
+                    return { lobbyId: event.data.lobbyId, signature: data.signature };
             }
         },
         [wallet]

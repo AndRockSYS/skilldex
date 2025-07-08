@@ -1,6 +1,6 @@
 [
     { "href": "/lobby", "label": "Lobby" },
-    { "href": "/create-challenge", "label": "Create Challenge" },
+    { "href": "/create-lobby", "label": "Create Lobby" },
     { "href": "/leaderboard", "label": "Leaderboard" },
     { "href": "/how-it-works", "label": "How It Works" }
 ]

@@ -11,15 +11,15 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { Loader2, ThumbsUp, MessageSquareQuote, Copy, Share2, UserPlus } from 'lucide-react';
+import { ThumbsUp, MessageSquareQuote, Copy, Share2, UserPlus } from 'lucide-react';
 
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
-import { generateChallengeTaunt } from '@/lib/ai/flows/generate-challenge-taunt-flow';
-
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+
+import { generateTaunt } from '@/utils/formatter';
 
 import { getGameName, getMatchFormatName, Lobby } from '@/types/games';
 import { getTokenName } from '@/types/utils';
@@ -34,37 +34,17 @@ export default function SuccessCreation({ lobby }: { lobby: Lobby }) {
     );
 
     const [isTauntDialogOpen, setIsTauntDialogOpen] = useState(false);
-    const [generatedTaunt, setGeneratedTaunt] = useState('');
-    const [isGeneratingTaunt, setIsGeneratingTaunt] = useState(false);
-
-    const handleGenerateTaunt = useCallback(async () => {
-        setIsGeneratingTaunt(true);
-        setGeneratedTaunt('');
-
-        try {
-            const result = await generateChallengeTaunt({
-                gameName: getGameName(lobby.gameType),
-                stakeAmount: lobby.pool.initial,
-                token: getTokenName(lobby.pool.token),
-                creatorHandle: lobby.creator.wallet.substring(0, 6) + '...',
-            });
-
-            const tauntText =
-                result.tauntText.replace('{{CHALLENGE_LINK}}', lobbyLink) +
-                getMatchFormatName(lobby.format);
-
-            setGeneratedTaunt(tauntText);
-            setIsTauntDialogOpen(true);
-        } catch (error: any) {
-            toast({
-                title: 'Taunt Generation Failed',
-                description: error.message || 'Could not generate taunt.',
-                variant: 'destructive',
-            });
-        }
-
-        setIsGeneratingTaunt(false);
-    }, [lobby]);
+    const taunt = useMemo(
+        () =>
+            generateTaunt(
+                lobby.creator.wallet,
+                lobby.pool.initial,
+                lobby.pool.token,
+                lobby.gameType,
+                lobbyLink
+            ),
+        [lobbyLink, lobby]
+    );
 
     const handleCopyText = useCallback(async (text: string, message: string) => {
         try {
@@ -118,17 +98,9 @@ export default function SuccessCreation({ lobby }: { lobby: Lobby }) {
                         </div>
                     </Card>
 
-                    <Button
-                        onClick={handleGenerateTaunt}
-                        className='w-full'
-                        disabled={isGeneratingTaunt}
-                    >
-                        {isGeneratingTaunt ? (
-                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                        ) : (
-                            <MessageSquareQuote className='mr-2 h-5 w-5' />
-                        )}
-                        Generate Shareable Taunt
+                    <Button onClick={() => setIsTauntDialogOpen(true)} className='w-full'>
+                        <MessageSquareQuote className='mr-2 h-5 w-5' />
+                        Share Taunt
                     </Button>
                     <Button
                         variant='outline'
@@ -149,17 +121,12 @@ export default function SuccessCreation({ lobby }: { lobby: Lobby }) {
                         </DialogDescription>
                     </DialogHeader>
                     <div className='my-4 p-3 bg-muted rounded-md text-sm'>
-                        {generatedTaunt ? (
-                            <p className='whitespace-pre-wrap'>{generatedTaunt}</p>
-                        ) : (
-                            <p>Generating taunt...</p>
-                        )}
+                        <p className='whitespace-pre-wrap'>{taunt}</p>
                     </div>
                     <DialogFooter className='gap-2 sm:gap-0 flex-col sm:flex-row'>
                         <Button
                             variant='outline'
-                            onClick={() => handleCopyText(generatedTaunt, 'Taunt Copied!')}
-                            disabled={!generatedTaunt}
+                            onClick={() => handleCopyText(taunt, 'Taunt Copied!')}
                             className='w-full sm:w-auto'
                         >
                             <Copy className='mr-2 h-4 w-4' /> Copy Taunt
@@ -167,11 +134,10 @@ export default function SuccessCreation({ lobby }: { lobby: Lobby }) {
                         <Button
                             onClick={() => {
                                 const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                                    generatedTaunt
+                                    taunt
                                 )}`;
                                 window.open(twitterUrl, '_blank', 'noopener,noreferrer');
                             }}
-                            disabled={!generatedTaunt}
                             className='bg-[#1DA1F2] hover:bg-[#1DA1F2]/90 text-white w-full sm:w-auto'
                         >
                             <Share2 className='mr-2 h-4 w-4' /> Share on X

@@ -66,7 +66,7 @@ export interface Lobby {
 
     timeLimit: number;
     createdAt: Timestamp;
-    expirationTime?: Timestamp;
+    expirationTime: Timestamp;
 }
 
 export interface QueuePlayer {

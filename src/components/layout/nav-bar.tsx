@@ -23,7 +23,7 @@ export default function NavBar() {
 
     return (
         <>
-            {!['/lobby', '/create-challenge', '/game', '/admin'].some((p) =>
+            {!['/lobby', '/create-lobby', '/game', '/admin'].some((p) =>
                 pathname.startsWith(p)
             ) && <InteractivePixelBackground />}
             <nav className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
