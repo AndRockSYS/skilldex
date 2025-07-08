@@ -95,7 +95,7 @@ export default function CreateLobby() {
             if (!wallet.publicKey) return;
 
             const initialBet = Math.floor(form.stake * LAMPORTS_PER_SOL);
-            const expirationTime = Math.floor(new Date(form.expiration).getTime() / 1000);
+            const expirationTime = form.expiration;
             const turnTime = Number(form.turnTimeLimit);
 
             const response = await createLobby(form.gameType, initialBet, expirationTime);
