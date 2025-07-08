@@ -26,20 +26,20 @@ export const userSlice = createSlice({
     initialState,
     reducers: {},
     extraReducers: (builder) => {
-        builder.addCase(fetchUser.fulfilled, (state, action) => {
-            state = action.payload;
+        builder.addCase(fetchUser.fulfilled, (_, action) => {
+            return action.payload;
         });
-        builder.addCase(addGame.fulfilled, (state, action) => {
-            state = action.payload;
+        builder.addCase(addGame.fulfilled, (_, action) => {
+            return action.payload;
         });
-        builder.addCase(updateUserField.fulfilled, (state, action) => {
-            state = action.payload;
+        builder.addCase(updateUserAppeareance.fulfilled, (_, action) => {
+            return action.payload;
         });
-        builder.addCase(updateLastActivity.fulfilled, (state, action) => {
-            state.lastActivity = action.payload;
+        builder.addCase(updateLastActivity.fulfilled, (_, action) => {
+            return action.payload;
         });
-        builder.addCase(updateNotifications.fulfilled, (state, action) => {
-            state.notifications = action.payload;
+        builder.addCase(updateNotifications.fulfilled, (_, action) => {
+            return action.payload;
         });
     },
 });
@@ -52,56 +52,62 @@ export const fetchUser = createAsyncThunk(
 export const addGame = createAsyncThunk(
     'user/addGame',
     async ({ gameType }: { gameType: 'created' | 'played' | 'won' }, { getState }) => {
-        let user = getState() as UserStats;
+        const userState = (getState() as any).userReducer as UserStats;
 
-        user.games[gameType]++;
-        user.points += REWARD_POINTS[gameType];
-        await AppDatabase.updateUser(user);
+        const updatedUser = structuredClone(userState);
+        updatedUser.games[gameType]++;
+        updatedUser.points += REWARD_POINTS[gameType];
 
-        return user;
+        await AppDatabase.updateUser(updatedUser);
+
+        return updatedUser;
     }
 );
 
-export const updateUserField = createAsyncThunk(
-    'user/updateUserField',
-    async ({ name, value }: { name: 'name' | 'avatar'; value: string }, { getState }) => {
-        let user = getState() as UserStats;
+export const updateUserAppeareance = createAsyncThunk(
+    'user/updateUserAppeareance',
+    async ({ name, avatar }: { name?: string; avatar?: string }, { getState }) => {
+        const userState = (getState() as any).userReducer as UserStats;
 
-        user[name] = value;
-        await AppDatabase.updateUser(user);
+        const updatedUser = structuredClone(userState);
+        if (name) updatedUser.name = name;
+        if (avatar) {
+            const link = await AppDatabase.uploadAvatar(updatedUser.walletAddress, avatar);
+            updatedUser.avatar = link;
+        }
+        await AppDatabase.updateUser(updatedUser);
 
-        return user;
-    }
-);
-
-export const updateLastActivity = createAsyncThunk(
-    'user/updateLastActivity',
-    async ({ timestamp }: { timestamp: Timestamp }, { getState }) => {
-        let user = getState() as UserStats;
-
-        user.lastActivity = timestamp;
-        await AppDatabase.updateUser(user);
-
-        return timestamp;
+        return updatedUser;
     }
 );
 
 export const updateNotifications = createAsyncThunk(
     'user/updateNotifications',
     async (
-        {
-            gameSound,
-            browser,
-            email,
-        }: { wallet: string; gameSound: boolean; browser: boolean; email?: string },
+        { gameSound, browser, email }: { gameSound: boolean; browser: boolean; email?: string },
         { getState }
     ) => {
-        let user = getState() as UserStats;
+        const userState = (getState() as any).userReducer as UserStats;
 
-        user.notifications = { gameSound, browser, email };
-        await AppDatabase.updateUser(user);
+        const updatedUser = structuredClone(userState);
+        updatedUser.notifications = { gameSound, browser };
+        if (email) updatedUser.notifications.email = email;
+        await AppDatabase.updateUser(updatedUser);
 
-        return user.notifications;
+        return updatedUser;
+    }
+);
+
+export const updateLastActivity = createAsyncThunk(
+    'user/updateLastActivity',
+    async ({ timestamp }: { timestamp: Timestamp }, { getState }) => {
+        const userState = (getState() as any).userReducer as UserStats;
+
+        const updatedUser = structuredClone(userState);
+        updatedUser.lastActivity = timestamp;
+        await AppDatabase.updateUser(updatedUser);
+
+        return updatedUser;
     }
 );
 

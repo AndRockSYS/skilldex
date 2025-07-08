@@ -1,5 +1,6 @@
 'use client';
 
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import Link from 'next/link';
 import { Menu, CircleUserRound, Coins, Loader2 } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { usePathname } from 'next/navigation';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useAppSelector } from '@/lib/redux/hooks';
 
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import navBar from '@/content/nav-bar.json';
@@ -20,6 +22,27 @@ import { cn } from '@/lib/utils';
 export default function NavBar() {
     const pathname = usePathname();
     const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+    const user = useAppSelector((state) => state.userReducer);
+
+    const ProfileIcon = ({ isMobileSize = false }) => (
+        <Link
+            href='/profile'
+            className={cn(
+                buttonVariants({ variant: 'ghost', size: 'sm' }),
+                'text-muted-foreground hover:text-primary w-9 h-9 px-0',
+                isMobileSize && 'h-8 w-8'
+            )}
+        >
+            <Avatar className={cn('h-6 w-6', isMobileSize && 'h-5 w-5')}>
+                <AvatarImage src={user.avatar || undefined} alt='User Avatar' />
+                <AvatarFallback className='bg-transparent'>
+                    <CircleUserRound className='h-5 w-5' />
+                </AvatarFallback>
+            </Avatar>
+            <span className='sr-only'>Profile</span>
+        </Link>
+    );
 
     return (
         <>
@@ -58,32 +81,14 @@ export default function NavBar() {
                         <div className='ml-4 flex items-center gap-3'>
                             <WalletBalance isMobile={false} />
                             <WalletMultiButton className='py-4 w-full min-h-[40px] text-lg bg-primary text-primary-foreground rounded-lg' />
-                            <Link
-                                href='/profile'
-                                className={cn(
-                                    buttonVariants({ variant: 'ghost', size: 'sm' }),
-                                    'text-muted-foreground hover:text-primary w-9 h-9 px-0'
-                                )}
-                            >
-                                <CircleUserRound className='h-5 w-5' />
-                                <span className='sr-only'>Profile</span>
-                            </Link>
+                            <ProfileIcon />
                         </div>
                     </div>
 
                     {/* Mobile Navigation Trigger and inline items */}
                     <div className='flex items-center gap-2 md:hidden'>
                         <WalletBalance isMobile={true} />
-                        <Link
-                            href='/profile'
-                            className={cn(
-                                buttonVariants({ variant: 'ghost', size: 'icon' }),
-                                'text-muted-foreground hover:text-primary h-8 w-8'
-                            )}
-                        >
-                            <CircleUserRound className='h-5 w-5' />
-                            <span className='sr-only'>Profile</span>
-                        </Link>
+                        <ProfileIcon isMobileSize={true} />
                         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                             <SheetTrigger asChild>
                                 <Button variant='outline' size='icon' className='h-8 w-8'>

@@ -11,6 +11,7 @@ import {
     setDoc,
     updateDoc,
 } from 'firebase/firestore';
+import { getDownloadURL, getStorage, ref, uploadString } from 'firebase/storage';
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
 
 import { generateCustomToken } from './admin';
@@ -24,7 +25,8 @@ import { Announcement } from '@/types/admin';
 
 export default class AppDatabase {
     static app = initializeApp(config);
-    static firestore = getFirestore(AppDatabase.app);
+    static firestore = getFirestore(this.app);
+    static storage = getStorage(this.app);
     static isAuthed = false;
 
     private static async authenticate(publicKey: string) {
@@ -67,6 +69,23 @@ export default class AppDatabase {
         if (!this.isAuthed) await this.authenticate(user.walletAddress);
         const userRef = doc(this.firestore, 'users', user.walletAddress);
         await updateDoc(userRef, user as any);
+    }
+
+    static async uploadAvatar(wallet: string, avatar: string) {
+        if (!this.isAuthed) await this.authenticate(wallet);
+
+        const storageRef = ref(this.storage, `avatars/${wallet}-${Date.now()}`);
+
+        let contentType = 'image/png';
+        if (avatar.startsWith('data:image/jpeg')) contentType = 'image/jpeg';
+        else if (avatar.startsWith('data:image/gif')) contentType = 'image/gif';
+
+        const metadata = {
+            contentType,
+        };
+
+        const result = await uploadString(storageRef, avatar, 'data_url', metadata);
+        return await getDownloadURL(result.ref);
     }
 
     static async fetchLeaderboard(): Promise<UserStats[]> {

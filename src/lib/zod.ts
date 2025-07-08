@@ -7,6 +7,12 @@ import { getTokenName, Token } from '@/types/utils';
 import { ModerationAction } from '@/types/admin';
 
 export const profileSettingsSchema = z.object({
+    name: z
+        .string()
+        .max(20, 'Username must be 20 characters or less.')
+        .optional()
+        .or(z.literal('')),
+    avatar: z.string().optional(),
     gameSound: z.boolean(),
     browser: z.boolean(),
     email: z.string().email({ message: 'Invalid email address' }).optional().or(z.literal('')),

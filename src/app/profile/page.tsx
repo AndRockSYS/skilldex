@@ -13,17 +13,18 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { UserCog, Volume2, Bell, Mail, Save, Loader2 } from 'lucide-react';
+import { UserCog, Volume2, Bell, Mail, Save, Loader2, User, Camera } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProfileSettings, profileSettingsSchema } from '@/lib/zod';
-import { updateNotifications } from '@/lib/redux/slice/user';
+import { updateNotifications, updateUserAppeareance } from '@/lib/redux/slice/user';
 
 export default function ProfilePage() {
     const user = useAppSelector((state) => state.userReducer);
@@ -32,39 +33,88 @@ export default function ProfilePage() {
 
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<ProfileSettings>({
         resolver: zodResolver(profileSettingsSchema),
         defaultValues: {
+            avatar: '',
+            name: '',
             gameSound: true,
             browser: true,
             email: '',
         },
     });
+    const avatar = form.watch('avatar');
 
     useEffect(() => {
-        if (user) form.reset(user.notifications);
+        if (user) {
+            form.reset({
+                avatar: user.avatar ?? '',
+                name: user.name ?? '',
+                gameSound: user.notifications?.gameSound ?? true,
+                browser: user.notifications?.browser ?? true,
+                email: user.notifications?.email ?? '',
+            });
+        }
     }, [user]);
 
     const onSubmit = async (data: ProfileSettings) => {
-        if (!publicKey) {
+        try {
+            if (!publicKey) {
+                toast({
+                    title: 'Wallet Not Connected',
+                    description: 'Please connect your wallet to save settings.',
+                    variant: 'destructive',
+                });
+                return;
+            }
+            setIsSaving(true);
+
+            await dispatch(
+                updateNotifications({
+                    browser: data.browser,
+                    gameSound: data.gameSound,
+                    email: data.email,
+                })
+            );
+            await dispatch(updateUserAppeareance({ name: data.name, avatar: data.avatar }));
+
             toast({
-                title: 'Wallet Not Connected',
-                description: 'Please connect your wallet to save settings.',
+                title: 'Settings Saved',
+                description: 'Your profile preferences have been updated.',
+            });
+        } catch (error) {
+            toast({
+                title: 'Settings Were Not Applied',
+                description: 'An error occured during settings update.',
                 variant: 'destructive',
             });
-            return;
+        } finally {
+            setIsSaving(false);
         }
+    };
 
-        setIsSaving(true);
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 1024 * 1024) {
+                toast({
+                    title: 'Image Too Large',
+                    description: 'Please select an image smaller than 1MB.',
+                    variant: 'destructive',
+                });
+                return;
+            }
 
-        await dispatch(updateNotifications({ wallet: publicKey.toString(), ...data }));
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const dataUrl = reader.result as string;
+                form.setValue('avatar', dataUrl, { shouldDirty: true });
+            };
 
-        toast({
-            title: 'Settings Saved',
-            description: 'Your profile preferences have been updated locally.',
-        });
-        setIsSaving(false);
+            reader.readAsDataURL(file);
+        }
     };
 
     if (!publicKey) {
@@ -80,7 +130,7 @@ export default function ProfilePage() {
         );
     }
 
-    // todo add dispay name and avatar updates
+    console.log(avatar);
 
     return (
         <div className='max-w-2xl mx-auto py-8 px-4 sm:px-0'>
@@ -98,6 +148,62 @@ export default function ProfilePage() {
                 <CardContent className='pt-8'>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+                            <div className='flex flex-col items-center gap-4'>
+                                <div className='relative'>
+                                    <Avatar className='h-24 w-24 border-4 border-primary/50'>
+                                        {avatar ? (
+                                            <AvatarImage
+                                                key={avatar}
+                                                src={avatar}
+                                                alt='User Avatar'
+                                            />
+                                        ) : (
+                                            <AvatarFallback className='bg-muted'>
+                                                <User className='h-12 w-12 text-muted-foreground' />
+                                            </AvatarFallback>
+                                        )}
+                                    </Avatar>
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='icon'
+                                        className='absolute bottom-0 right-0 rounded-full h-8 w-8 bg-background'
+                                        onClick={() => avatarInputRef.current?.click()}
+                                    >
+                                        <Camera className='h-4 w-4' />
+                                        <span className='sr-only'>Change avatar</span>
+                                    </Button>
+                                    <Input
+                                        type='file'
+                                        ref={avatarInputRef}
+                                        className='hidden'
+                                        accept='image/png, image/jpeg, image/gif'
+                                        onChange={handleAvatarChange}
+                                    />
+                                </div>
+                            </div>
+
+                            <FormField
+                                control={form.control}
+                                name='name'
+                                render={({ field }) => (
+                                    <FormItem className='rounded-lg border p-4 shadow-sm bg-card'>
+                                        <FormLabel className='text-base flex items-center'>
+                                            <User className='mr-2 h-5 w-5 text-primary' />
+                                            User Name
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input placeholder='Your username' {...field} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            This name will be displayed on the leaderboard and in
+                                            games.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
                             <FormField
                                 control={form.control}
                                 name='gameSound'
