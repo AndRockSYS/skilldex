@@ -13,7 +13,7 @@ import { Trophy, UserCircle2, Star, Hash } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-import { getRank, UserStats } from '@/types/user';
+import { UserStats } from '@/types/user';
 import { formatWallet } from '@/utils/formatter';
 
 interface Props {
@@ -76,7 +76,6 @@ export default function LeaderboardTable({ users }: Props) {
                                 {index === 2 && (
                                     <Trophy className='inline-block h-5 w-5 text-amber-500 mr-1' />
                                 )}
-                                {getRank(user.points)}
                             </TableCell>
                             <TableCell>
                                 <div className='flex items-center gap-3'>

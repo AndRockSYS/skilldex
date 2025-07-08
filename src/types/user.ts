@@ -23,11 +23,6 @@ export interface UserStats {
     lastActivity: Timestamp;
 }
 
-export function getRank(points: number): string {
-    // todo add ranks
-    return 'N/A';
-}
-
 export enum PlayerStatus {
     Online,
     Disconnected,
