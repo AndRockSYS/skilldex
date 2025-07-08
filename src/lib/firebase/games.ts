@@ -1,11 +1,23 @@
 import { initializeApp } from 'firebase/app';
-import { doc, getDoc, getFirestore, setDoc, updateDoc } from 'firebase/firestore';
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    getFirestore,
+    limit,
+    orderBy,
+    query,
+    setDoc,
+    startAfter,
+    updateDoc,
+} from 'firebase/firestore';
 import { get, getDatabase, ref, update, remove } from 'firebase/database';
 
 import config from '@/config/firebase.json';
 import { QUEUE_TIME_LIMIT } from '@/utils/constants';
 
-import { Lobby, QueuePlayer } from '@/types/games';
+import { GameState, Lobby, QueuePlayer } from '@/types/games';
 import { Player } from '@/types/user';
 
 export default class GameDatabase {
@@ -27,17 +39,28 @@ export default class GameDatabase {
     }
 
     static async fetchLobbies(lastGameId?: number): Promise<Lobby[]> {
-        // todo with custom queries ?
-        return [];
+        let lobbiesQuery = query(
+            collection(this.firestore, 'games'),
+            orderBy('createdAt', 'desc'),
+            limit(5)
+        );
+
+        if (lastGameId) lobbiesQuery = query(lobbiesQuery, startAfter(lastGameId));
+
+        const snapshot = await getDocs(lobbiesQuery);
+        return snapshot.docs.map((snap) => snap.data()) as Lobby[];
     }
 
     static async addOpponent(gameId: number, opponent: Player) {
-        const opponentRef = doc(this.firestore, 'games', gameId.toString(), 'opponent');
-        await updateDoc(opponentRef, opponent as any);
+        const opponentRef = doc(this.firestore, 'games', gameId.toString());
+        await updateDoc(opponentRef, { opponent, state: GameState.Active });
     }
 
-    static async updateWinner(gameId: number, opponent: Player) {
-        await updateDoc(doc(this.firestore, 'games', gameId.toString(), 'winner'), opponent as any);
+    static async updateWinner(gameId: number, winner: string) {
+        await updateDoc(doc(this.firestore, 'games', gameId.toString()), {
+            winner,
+            state: GameState.Finished,
+        });
     }
 
     static async updateTurn() {
@@ -70,14 +93,11 @@ export default class GameDatabase {
         const gameRef = ref(this.database, `/queue/${gameId}`);
 
         const snapshot = await get(gameRef);
-        const userData = snapshot.val() as QueuePlayer;
         if (
             !snapshot.exists() ||
-            (snapshot.exists() && userData.timestamp + QUEUE_TIME_LIMIT > Date.now())
+            (snapshot.exists() && snapshot.val().timestamp + QUEUE_TIME_LIMIT > Date.now())
         ) {
-            const updates: any = {};
-            updates[`/queue/${gameId}`] = { wallet, timestamp: Date.now() };
-            await update(gameRef, updates);
+            await update(gameRef, { wallet, timestamp: Date.now() });
             return { success: true, message: 'User was added to a queue' };
         }
 

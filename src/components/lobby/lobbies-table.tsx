@@ -13,7 +13,7 @@ import Link from 'next/link';
 
 import useProgram from '@/hooks/use-program';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/lib/redux/hooks';
@@ -31,6 +31,8 @@ import {
 
 import { GameState, getGameName, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
 import { getTokenName } from '@/types/utils';
+import { Player } from '@/types/user';
+
 interface Props {
     lobbies: Lobby[];
     status: GameState;
@@ -42,11 +44,14 @@ export default function LobbiesTable({ lobbies, status }: Props) {
 
     const { name, avatar } = useAppSelector((state) => state.userReducer);
     const { publicKey } = useWallet();
-    const { joinLobby, isProcessing } = useProgram();
+    const { joinLobby } = useProgram();
+
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const handleLobbyJoin = useCallback(
         async (lobbyId: number) => {
             if (!publicKey) return;
+            setIsProcessing(true);
 
             try {
                 const { success, message } = await GameDatabase.enqueue(
@@ -55,24 +60,27 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                 );
 
                 toast({
-                    title: success ? 'Success' : 'Cannot Proceed',
+                    title: success ? 'Queue Update' : 'Queue Update Fail',
                     description: message,
                     variant: 'default',
                 });
-
                 if (!success) return;
+
                 // todo add timer to dequeue
 
                 const data = await joinLobby(lobbyId);
                 if (!data) throw new Error('Tx was not submitted');
 
-                await GameDatabase.addOpponent(lobbyId, {
+                const opponent: Player = {
                     wallet: publicKey.toString(),
-                    name,
-                    avatar,
                     score: 0,
                     txSignature: data?.signature,
-                });
+                };
+
+                if (name) opponent.name = name;
+                if (avatar) opponent.avatar = avatar;
+
+                await GameDatabase.addOpponent(lobbyId, opponent);
 
                 toast({
                     title: 'Tx Submitted',
@@ -82,19 +90,22 @@ export default function LobbiesTable({ lobbies, status }: Props) {
 
                 router.push(`/game/${lobbyId}`);
             } catch (error: any) {
+                await GameDatabase.dequeue(lobbyId);
                 toast({
                     title: 'Join Failed',
                     description: error.message ?? 'An error occurred while joining the demo game.',
                     variant: 'destructive',
-                    duration: 9000,
+                    duration: 4000,
                 });
+            } finally {
+                setIsProcessing(false);
             }
         },
         [publicKey, name, avatar, joinLobby]
     );
 
-    if (lobbies.length === 0)
-        return <p className='text-center py-8 text-muted-foreground'>No lobbys were found.</p>;
+    if (!lobbies.length)
+        return <p className='text-center py-8 text-muted-foreground'>No lobbies were found.</p>;
 
     return (
         <div className='overflow-x-auto'>
@@ -102,7 +113,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Game</TableHead>
-                        <TableHead className='hidden md:table-cell'>lobbyr</TableHead>
+                        <TableHead className='hidden md:table-cell'>Creator</TableHead>
                         <TableHead className='hidden sm:table-cell'>Format</TableHead>
                         <TableHead className='hidden sm:table-cell'>Token</TableHead>
                         <TableHead>Stake</TableHead>
@@ -213,17 +224,18 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                             }
                                             className='whitespace-nowrap'
                                         >
-                                            {publicKey?.toString() == lobby.creator.wallet &&
-                                                'Your Game'}
-                                            {!!lobby.opponent && 'Full'}
-                                            {isProcessing && (
+                                            {publicKey?.toString() == lobby.creator.wallet ? (
+                                                'Your Game'
+                                            ) : !!lobby.opponent ? (
+                                                'Full'
+                                            ) : !isProcessing ? (
+                                                'Join & Stake'
+                                            ) : (
                                                 <>
                                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                                     Joining...
                                                 </>
                                             )}
-
-                                            {!lobby.opponent && !isProcessing && 'Join & Stake'}
                                         </Button>
                                     )}
                                     {(status == GameState.Active ||

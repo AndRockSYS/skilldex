@@ -1,5 +1,5 @@
 import { useAnchorWallet } from '@solana/wallet-adapter-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useToast } from './use-toast';
 
 import { getPlatform } from '@/actions';
@@ -17,12 +17,13 @@ import { GameType } from '@/types/games';
 
 const useProgram = () => {
     const { toast } = useToast();
-    const wallet = useAnchorWallet();
-
     const [isProcessing, setIsProcessing] = useState(false);
 
+    const wallet = useAnchorWallet();
+    const program = useMemo(() => (wallet ? initProgram(wallet) : undefined), [wallet]);
+
     const completeTransaction = useCallback(
-        async (tx: Transaction) => {
+        async (tx: Transaction, platform?: web3.Keypair) => {
             try {
                 if (!wallet) return;
 
@@ -32,6 +33,7 @@ const useProgram = () => {
                 tx.feePayer = wallet.publicKey;
 
                 const signed = await wallet.signTransaction(tx);
+                if (platform) signed.partialSign(platform);
 
                 const txId = await connection.sendRawTransaction(signed.serialize());
                 const confirmation = await connection.confirmTransaction(
@@ -47,7 +49,7 @@ const useProgram = () => {
 
                 return { signature: txId, error: confirmation.value.err?.toString() };
             } catch (error: any) {
-                console.log(error);
+                console.error(error);
                 toast({
                     title: 'Tx Error',
                     description: error.message ?? 'Your transaction was not submitted.',
@@ -62,8 +64,7 @@ const useProgram = () => {
 
     const createLobby = useCallback(
         async (gameType: GameType, bet: number, expireTime: number) => {
-            setIsProcessing(true);
-            if (!wallet?.publicKey) {
+            if (!wallet?.publicKey || !program) {
                 toast({
                     title: 'Wallet Not Connected',
                     description: 'Please connect your wallet.',
@@ -71,10 +72,10 @@ const useProgram = () => {
                 });
                 return;
             }
+            setIsProcessing(true);
 
             const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
 
-            const program = initProgram(wallet);
             const tx = await program.methods
                 .createLobby(
                     convertGameType(gameType),
@@ -86,10 +87,9 @@ const useProgram = () => {
                     platformSigner: platformSigner.publicKey,
                     player: wallet.publicKey,
                 })
-                .signers([platformSigner])
                 .transaction();
 
-            const data = await completeTransaction(tx);
+            const data = await completeTransaction(tx, platformSigner);
             if (!data || data.error) return;
 
             const logs = await parseEventLogs(connection, data.signature, program);
@@ -98,12 +98,12 @@ const useProgram = () => {
                     return { lobbyId: event.data.lobbyId, signature: data.signature };
             }
         },
-        [wallet]
+        [wallet, program]
     );
 
     const joinLobby = useCallback(
         async (lobbyId: number) => {
-            if (!wallet?.publicKey) {
+            if (!wallet?.publicKey || !program) {
                 toast({
                     title: 'Wallet Not Connected',
                     description: 'Please connect your wallet.',
@@ -115,24 +115,23 @@ const useProgram = () => {
 
             const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
 
-            const tx = await initProgram(wallet)
-                .methods.joinLobby(lobbyId)
+            const tx = await program.methods
+                .joinLobby(new BN(lobbyId))
                 .accounts({
                     //@ts-ignore
                     platformSigner: platformSigner.publicKey,
                     player: wallet.publicKey,
                 })
-                .signers([platformSigner])
                 .transaction();
 
-            return await completeTransaction(tx);
+            return await completeTransaction(tx, platformSigner);
         },
-        [wallet]
+        [connection, wallet]
     );
 
     const closeLobby = useCallback(
         async (lobbyId: number) => {
-            if (!wallet?.publicKey) {
+            if (!wallet?.publicKey || !program) {
                 toast({
                     title: 'Wallet Not Connected',
                     description: 'Please connect your wallet.',
@@ -142,8 +141,8 @@ const useProgram = () => {
             }
             setIsProcessing(true);
 
-            const tx = await initProgram(wallet)
-                .methods.closeLobbyAsPlayer(lobbyId)
+            const tx = await program.methods
+                .closeLobbyAsPlayer(new BN(lobbyId))
                 .accounts({
                     player: wallet.publicKey,
                 })
@@ -156,7 +155,7 @@ const useProgram = () => {
 
     const declareWinner = useCallback(
         async (lobbyId: number) => {
-            if (!wallet?.publicKey) {
+            if (!wallet?.publicKey || !program) {
                 toast({
                     title: 'Wallet Not Connected',
                     description: 'Please connect your wallet.',
@@ -168,17 +167,16 @@ const useProgram = () => {
 
             const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
 
-            const tx = await initProgram(wallet)
-                .methods.declareWinner(lobbyId)
+            const tx = await program.methods
+                .declareWinner(new BN(lobbyId))
                 .accounts({
                     //@ts-ignore
                     platformSigner: platformSigner.publicKey,
                     winner: wallet.publicKey,
                 })
-                .signers([platformSigner])
                 .transaction();
 
-            return await completeTransaction(tx);
+            return await completeTransaction(tx, platformSigner);
         },
         [wallet]
     );
@@ -199,7 +197,7 @@ const useProgram = () => {
     // * Admin actions only
 
     const initializePlatform = useCallback(async () => {
-        if (!wallet?.publicKey) {
+        if (!wallet?.publicKey || !program) {
             toast({
                 title: 'Wallet Not Connected',
                 description: 'Please connect your wallet.',
@@ -209,8 +207,8 @@ const useProgram = () => {
         }
         setIsProcessing(true);
 
-        const tx = await initProgram(wallet)
-            .methods.initializePlatform()
+        const tx = await program.methods
+            .initializePlatform()
             .accounts({
                 platformSigner: wallet.publicKey,
             })
@@ -221,7 +219,7 @@ const useProgram = () => {
 
     const updatePlatform = useCallback(
         async (newSigner: PublicKey) => {
-            if (!wallet?.publicKey) {
+            if (!wallet?.publicKey || !program) {
                 toast({
                     title: 'Wallet Not Connected',
                     description: 'Please connect your wallet.',
@@ -233,23 +231,22 @@ const useProgram = () => {
 
             const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
 
-            const tx = await initProgram(wallet)
-                .methods.updatePlatformSigner()
+            const tx = await program.methods
+                .updatePlatformSigner()
                 .accounts({
                     //@ts-ignore
                     platformSigner: platformSigner.publicKey,
                     newPlatformSigner: newSigner,
                 })
-                .signers([platformSigner])
                 .transaction();
 
-            return await completeTransaction(tx);
+            return await completeTransaction(tx, platformSigner);
         },
         [wallet]
     );
 
     const withdrawCommission = useCallback(async () => {
-        if (!wallet?.publicKey) {
+        if (!wallet?.publicKey || !program) {
             toast({
                 title: 'Wallet Not Connected',
                 description: 'Please connect your wallet.',
@@ -261,20 +258,19 @@ const useProgram = () => {
 
         const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
 
-        const tx = await initProgram(wallet)
-            .methods.withdrawCommission()
+        const tx = await program.methods
+            .withdrawCommission()
             .accounts({
                 platformSigner: platformSigner.publicKey,
             })
-            .signers([platformSigner])
             .transaction();
 
-        return await completeTransaction(tx);
+        return await completeTransaction(tx, platformSigner);
     }, [wallet]);
 
     const closeLobbyPlatform = useCallback(
         async (lobbyId: number, creator: PublicKey) => {
-            if (!wallet?.publicKey) {
+            if (!wallet?.publicKey || !program) {
                 toast({
                     title: 'Wallet Not Connected',
                     description: 'Please connect your wallet.',
@@ -286,17 +282,16 @@ const useProgram = () => {
 
             const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
 
-            const tx = await initProgram(wallet)
-                .methods.closeLobbyAsPlatform(lobbyId)
+            const tx = await program.methods
+                .closeLobbyAsPlatform(new BN(lobbyId))
                 .accounts({
                     //@ts-ignore
                     platformSigner: platformSigner.publicKey,
                     playerAccount: creator,
                 })
-                .signers([platformSigner])
                 .transaction();
 
-            return await completeTransaction(tx);
+            return await completeTransaction(tx, platformSigner);
         },
         [wallet]
     );

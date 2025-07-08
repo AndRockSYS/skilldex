@@ -29,6 +29,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 
 import GameDatabase from '@/lib/firebase/games';
 
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { games } from '@/content/games';
 
 import { GameState, GameType } from '@/types/games';
@@ -41,6 +42,8 @@ export default function LobbyPage() {
     const [minStake, setMinStake] = useState<string>('');
     const [maxStake, setMaxStake] = useState<string>('');
 
+    const [page, setPage] = useState(0);
+
     const {
         data: lobbies,
         fetchNextPage,
@@ -50,46 +53,49 @@ export default function LobbyPage() {
     } = useInfiniteQuery({
         queryKey: ['lobby', 'all'],
         queryFn: async ({ pageParam }) => {
-            return Number.isNaN(Number(lobbyId))
-                ? [await GameDatabase.fetchLobbyById(Number(lobbyId))]
-                : await GameDatabase.fetchLobbies(pageParam);
+            setPage(pageParam);
+            if (lobbyId && !isNaN(Number(lobbyId))) {
+                const lobby = await GameDatabase.fetchLobbyById(Number(lobbyId));
+                return lobby ? [lobby] : [];
+            }
+            const lobbies = await GameDatabase.fetchLobbies(pageParam);
+            return Array.isArray(lobbies) ? lobbies : [];
         },
-        getNextPageParam: (lastPage) => lastPage[lastPage.length - 1].id,
+        getNextPageParam: (lastPage) =>
+            lastPage.length > 0 ? lastPage[lastPage.length - 1].id : 0,
         initialPageParam: 0,
-        initialData: { pages: [], pageParams: [] },
+        initialData: { pages: [[]], pageParams: [] },
+        refetchInterval: 3_000,
     });
 
     const filteredLobbies = useMemo(() => {
-        let filtered = lobbies.pages[lobbies.pages.length - 1];
+        let filtered = lobbies.pages[page];
 
         if (searchTerm) {
+            const lowered = searchTerm.toLowerCase();
             filtered = filtered.filter(
-                (challenge) =>
-                    challenge.gameType
-                        .toString()
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    challenge.pool.token
-                        .toString()
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    challenge.creator.wallet.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    challenge.id.toString().toLowerCase().includes(searchTerm.toLowerCase())
+                (lobby) =>
+                    lobby.id.toString().toLowerCase().includes(lowered) ||
+                    lobby.creator.wallet.toLowerCase().includes(lowered)
             );
         }
 
-        if (gameType) filtered = filtered.filter((challenge) => challenge.gameType == gameType);
+        if (gameType) filtered = filtered.filter((lobby) => lobby.gameType == gameType);
 
         const parsedMinStake = parseFloat(minStake);
         if (!isNaN(parsedMinStake))
-            filtered = filtered.filter((challenge) => challenge.pool.initial >= parsedMinStake);
+            filtered = filtered.filter(
+                (lobby) => lobby.pool.initial / LAMPORTS_PER_SOL >= parsedMinStake
+            );
 
         const parsedMaxStake = parseFloat(maxStake);
         if (!isNaN(parsedMaxStake))
-            filtered = filtered.filter((challenge) => challenge.pool.initial <= parsedMaxStake);
+            filtered = filtered.filter(
+                (lobby) => lobby.pool.initial / LAMPORTS_PER_SOL <= parsedMaxStake
+            );
 
         return filtered;
-    }, [lobbies, searchTerm, gameType, minStake, maxStake]);
+    }, [lobbies, page, searchTerm, gameType, minStake, maxStake]);
 
     return (
         <div className='space-y-8'>
@@ -101,9 +107,9 @@ export default function LobbyPage() {
                     asChild
                     className='w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground'
                 >
-                    <Link href='/create-challenge' className='flex items-center px-4 py-2'>
+                    <Link href='/create-lobby' className='flex items-center px-4 py-2'>
                         <PlusSquare className='mr-2 h-5 w-5' />
-                        <span className='font-medium'>Create New Challenge</span>
+                        <span className='font-medium'>Create New Lobby</span>
                     </Link>
                 </Button>
             </div>
@@ -188,7 +194,7 @@ export default function LobbyPage() {
                                 <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none' />
                                 <Input
                                     id='search-filter'
-                                    placeholder='Search by game, token, challenger, or ID'
+                                    placeholder='Search by challenger or lobby id'
                                     className='pl-10'
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -205,10 +211,15 @@ export default function LobbyPage() {
                     <TabsTrigger value={GameState.Finished.toString()}>Match History</TabsTrigger>
                 </TabsList>
                 {[GameState.Open, GameState.Active, GameState.Finished].map((state) => (
-                    <TabsContent value={state.toString()} className='mt-4'>
+                    <TabsContent key={state} value={state.toString()} className='mt-4'>
                         <Card>
                             <CardContent className='p-0'>
-                                <LobbiesTable lobbies={filteredLobbies} status={state} />
+                                <LobbiesTable
+                                    lobbies={filteredLobbies.filter(
+                                        (lobby) => lobby.state == state
+                                    )}
+                                    status={state}
+                                />
                             </CardContent>
                             <CardFooter className='flex justify-between items-center py-4 border-t'>
                                 <Button

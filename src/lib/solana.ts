@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 import { AnchorWallet } from '@solana/wallet-adapter-react';
-import { AnchorProvider, BorshCoder, EventParser, Program } from '@coral-xyz/anchor';
+import { AnchorProvider, BN, BorshCoder, EventParser, Program } from '@coral-xyz/anchor';
 
 import { connection } from '@/config/solana';
 
@@ -24,7 +24,7 @@ export const getLobbyAddress = (lobbyId: number): PublicKey => {
     const [lobby] = PublicKey.findProgramAddressSync(
         [
             Buffer.from(PDA_AFFIXES.lobby),
-            Buffer.from(lobbyId.toString()),
+            new BN(lobbyId).toArray('le', 8),
             Buffer.from(PDA_AFFIXES.suffix),
         ],
         new PublicKey(IDL.address)

@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 import { LOCAL_KEY_ANNOUNCEMENT_TIMESTAMP } from '@/utils/constants';
 
@@ -13,6 +14,7 @@ import AppDatabase from '@/lib/firebase/client';
 
 export default function Announcements() {
     const { toast } = useToast();
+    const [isClosed, setIsClosed] = useState(false);
 
     const { data: announcements } = useQuery({
         queryKey: ['announcement'],
@@ -31,12 +33,12 @@ export default function Announcements() {
     return announcements
         .filter(
             (ann) =>
-                ann.timestamp.toMillis() >
-                Number(localStorage.getItem(LOCAL_KEY_ANNOUNCEMENT_TIMESTAMP) ?? 0)
+                ann.createdAt >
+                    Number(localStorage.getItem(LOCAL_KEY_ANNOUNCEMENT_TIMESTAMP) ?? 0) || isClosed
         )
         .map((announcement) => (
             <Alert
-                key={announcement.timestamp.toString()}
+                key={announcement.createdAt}
                 className='relative bg-primary/10 border-primary/30'
             >
                 <Megaphone className='h-5 w-5 text-primary' />
@@ -47,17 +49,17 @@ export default function Announcements() {
                 <Button
                     variant='ghost'
                     size='icon'
-                    className='absolute top-2 right-2 h-6 w-6 text-primary/70 hover:text-primary'
-                    onClick={() =>
+                    className='absolute top-2 right-2 min-w-4 min-h-4 text-primary/70 hover:text-primary'
+                    onClick={() => {
                         localStorage.setItem(
                             LOCAL_KEY_ANNOUNCEMENT_TIMESTAMP,
-                            announcement.timestamp.toMillis().toString()
-                        )
-                    }
+                            announcement.createdAt.toString()
+                        );
+                        setIsClosed(true);
+                    }}
                     title='Dismiss announcement'
                 >
-                    <X className='h-4 w-4' />
-                    <span className='sr-only'>Dismiss</span>
+                    <X className='absolute top-2 right-2 h-4 w-4' />
                 </Button>
             </Alert>
         ));
