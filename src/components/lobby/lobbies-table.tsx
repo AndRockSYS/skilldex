@@ -81,6 +81,9 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                 if (avatar) opponent.avatar = avatar;
 
                 await GameDatabase.addOpponent(lobbyId, opponent);
+                await GameDatabase.updateTurn(lobbyId, publicKey.toString());
+
+                // todo notify a creator
 
                 toast({
                     title: 'Tx Submitted',
