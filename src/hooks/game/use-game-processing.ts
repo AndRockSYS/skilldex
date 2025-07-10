@@ -45,7 +45,7 @@ export default function useGameProcessing(gameId: number) {
     const { data: turn } = useQuery({
         queryKey: ['game', gameId, 'turn'],
         queryFn: async () => await GameDatabase.fetchTurn(gameId),
-        enabled: gameData?.state == GameState.Open,
+        enabled: gameData?.state == GameState.Active,
         refetchInterval: 1_000,
     });
 
@@ -55,7 +55,7 @@ export default function useGameProcessing(gameId: number) {
             const emojis = await GameDatabase.fetchEmojis(gameId);
             return emojis.sort((a, b) => a.timestamp - b.timestamp);
         },
-        enabled: gameData?.state == GameState.Open,
+        enabled: gameData?.state == GameState.Active,
         refetchInterval: 1_000,
         initialData: [],
     });
@@ -70,7 +70,7 @@ export default function useGameProcessing(gameId: number) {
 
     // Handles turn timer
     useEffect(() => {
-        if (!gameData || !turn || gameData.state != GameState.Open) return;
+        if (!gameData || !turn || gameData.state != GameState.Active) return;
 
         const endTimestamp = turn.turnStart + gameData.timeLimit;
         const timeLeft = Math.max(endTimestamp - Date.now(), 0);
@@ -80,7 +80,7 @@ export default function useGameProcessing(gameId: number) {
             return;
         }
 
-        const timer = setInterval(() => setTimeLeft(timeLeft), 1_000);
+        const timer = setInterval(() => setTimeLeft(timeLeft), 400);
         return () => clearInterval(timer);
     }, [gameData, turn, turnTimeLeft]);
 
@@ -143,16 +143,19 @@ export default function useGameProcessing(gameId: number) {
             });
 
             await GameDatabase.updateWinner(gameData.id, seriesWinner);
+            await GameDatabase.clearGameData(gameData.id);
 
-            if (isSpectator) router.push('/lobby');
-            else {
-                await dispatch(
-                    addGame({ gameType: seriesWinner == publicKey.toString() ? 'won' : 'played' })
-                );
-                router.push(`/game/${gameData.id}/result`);
-            }
+            console.log(gameData, publicKey, isSpectator);
+
+            // if (isSpectator) router.push('/lobby');
+            // else {
+            await dispatch(
+                addGame({ gameType: seriesWinner == publicKey.toString() ? 'won' : 'played' })
+            );
+            router.push(`/game/${gameData.id}/result`);
+            // }
         },
-        [gameData, publicKey]
+        [gameData, publicKey, isSpectator]
     );
 
     useEffect(() => {
@@ -162,12 +165,12 @@ export default function useGameProcessing(gameId: number) {
         if (turn.playerWallet == publicKey.toString()) {
             playTurnSound();
 
-            if (isEffectivelyOffline && notificationPermission === 'granted') {
+            if (isEffectivelyOffline && notificationPermission == 'granted') {
                 const notification = new Notification(`It's your turn!`, {
                     body: `Time to make your move in ${getGameName(
                         gameData.gameType
                     )} on SKILLDEX.IO.`,
-                    icon: '/logo_icon_placeholder_192.png',
+                    icon: '/logo.png',
                     tag: `skilldex-io-turn-${gameId}`,
                 });
                 notification.onclick = () => {

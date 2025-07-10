@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import ShareResult from './share-result';
 import Confetti from 'react-confetti';
-import { ArrowUp, Award, DollarSign, Frown, Home, RotateCcw } from 'lucide-react';
+import { Award, DollarSign, Frown, Home, RotateCcw } from 'lucide-react';
 
 import { useEffect, useMemo, useState } from 'react';
 
@@ -16,6 +16,7 @@ import { formatTokenAmount } from '@/utils/formatter';
 
 import { getGameName, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
 import { getTokenName } from '@/types/utils';
+import useProgram from '@/hooks/use-program';
 
 interface Props {
     lobby: Lobby;
@@ -23,10 +24,14 @@ interface Props {
 }
 
 export default function EndGameScreen({ lobby, isWinner }: Props) {
+    const { declareWinner } = useProgram();
+
     const [showConfetti, setShowConfetti] = useState(false);
     const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
-    // todo call a tx in here
+    useEffect(() => {
+        if (isWinner) declareWinner(lobby.id);
+    }, []);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -160,14 +165,13 @@ export default function EndGameScreen({ lobby, isWinner }: Props) {
                                 className='text-sm sm:text-base'
                             >
                                 <Link
-                                    href={`/create-challenge?gameTypeId=${
+                                    href={`/create-lobby?gameTypeId=${
                                         lobby.gameType
                                     }&stake=${Number(lobby.pool.initial)}&matchFormat=${
                                         lobby.format
                                     }`}
                                 >
-                                    <RotateCcw className='mr-2 h-4 w-4 sm:h-5 sm:w-5' /> Rematch (
-                                    {getMatchFormatName(lobby.format)})
+                                    <RotateCcw className='mr-2 h-4 w-4 sm:h-5 sm:w-5' /> Rematch
                                 </Link>
                             </Button>
                             <Button
@@ -177,13 +181,12 @@ export default function EndGameScreen({ lobby, isWinner }: Props) {
                                 className='border-accent text-accent hover:bg-accent/10 hover:text-accent text-sm sm:text-base'
                             >
                                 <Link
-                                    href={`/create-challenge?gameTypeId=${lobby.gameType}&stake=${
+                                    href={`/create-lobby?gameTypeId=${lobby.gameType}&stake=${
                                         Number(lobby.pool.initial) * 2
                                     }`}
                                 >
                                     <DollarSign className='mr-1 h-4 w-4 sm:h-5 sm:w-5' />
-                                    <ArrowUp className='mr-2 h-3 w-3 sm:h-4 sm:w-4 -ml-1' />
-                                    Double or Nothing (Single)
+                                    Double or Nothing
                                 </Link>
                             </Button>
                         </div>
