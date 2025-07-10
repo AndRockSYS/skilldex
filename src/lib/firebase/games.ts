@@ -17,8 +17,9 @@ import { get, getDatabase, ref, update, remove } from 'firebase/database';
 import config from '@/config/firebase.json';
 import { QUEUE_TIME_LIMIT } from '@/utils/constants';
 
-import { GameState, Lobby, QueuePlayer } from '@/types/games';
+import { GameState, Lobby, QueuePlayer, Reaction, Turn } from '@/types/games';
 import { Player } from '@/types/user';
+import { FlaggedGame } from '@/types/admin';
 
 export default class GameDatabase {
     static app = initializeApp(config);
@@ -63,24 +64,43 @@ export default class GameDatabase {
         });
     }
 
-    static async updateTurn() {
-        // todo when adding games
-        // turn: {
-        //     playerWallet: string;
-        //     startTimestamp: Timestamp;
-        // }
+    static async updateTurn(gameId: number, playerWallet: string) {
+        const turnRef = ref(this.database, `/turns/${gameId}`);
+        await update(turnRef, { playerWallet, turnStart: Date.now() });
+    }
+
+    static async updateScore(gameId: number, side: 'creator' | 'opponent', newScore: number) {
+        const lobbyRef = doc(this.firestore, 'games', gameId.toString());
+        await updateDoc(lobbyRef, { [`${side}.score`]: newScore });
+    }
+
+    static async fetchTurn(gameId: number): Promise<Turn> {
+        const turnRef = ref(this.database, `/turns/${gameId}`);
+        const snapshot = await get(turnRef);
+        if (!snapshot.exists()) throw new Error('No turn was found');
+        return snapshot.val();
     }
 
     static async addEmoji(gameId: number, side: 'creator' | 'opponent', emoji: string) {
-        // todo when adding games
-        // {
-        //     emoji: string;
-        //     timestamp: Timestamp;
-        // }
+        const reaction: Reaction = {
+            sender: side,
+            emoji,
+            timestamp: Date.now(),
+        };
+
+        const reactionRef = ref(this.database, `/emojis/${gameId}/${reaction.timestamp}`);
+        await update(reactionRef, reaction);
     }
 
-    static fetchEmojis(gameId: number) {
-        // todo when adding games
+    static async fetchEmojis(gameId: number): Promise<Reaction[]> {
+        const reactionsRef = ref(this.database, `/emojis/${gameId}`);
+        const data = await get(reactionsRef);
+        return Object.values(data).sort((a, b) => a.timestamp - b.timestamp);
+    }
+
+    static async sendGameReport(report: FlaggedGame) {
+        const reportsRef = doc(this.firestore, 'reports');
+        await setDoc(reportsRef, report);
     }
 
     static async enqueue(

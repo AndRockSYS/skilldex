@@ -43,6 +43,7 @@ export default class AppDatabase {
         const newUser = {
             walletAddress: publicKey,
             points: 0,
+            avatar: 'https://placehold.co/128x128.png',
             games: {
                 created: 0,
                 played: 0,

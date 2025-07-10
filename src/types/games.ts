@@ -15,6 +15,17 @@ export enum GameState {
     Finished,
 }
 
+export const getStateName = (state: GameState): string => {
+    switch (state) {
+        case GameState.Open:
+            return 'Open';
+        case GameState.Active:
+            return 'Active';
+        case GameState.Finished:
+            return 'Finished';
+    }
+};
+
 export enum GameType {
     TicTacToe,
     ConnectFour,
@@ -71,5 +82,16 @@ export interface Lobby {
 
 export interface QueuePlayer {
     wallet: string;
+    timestamp: Timestamp;
+}
+
+export interface Turn {
+    turnStart: Timestamp;
+    playerWallet: string;
+}
+
+export interface Reaction {
+    sender: 'creator' | 'opponent';
+    emoji: string;
     timestamp: Timestamp;
 }
