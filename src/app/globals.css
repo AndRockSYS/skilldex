@@ -99,7 +99,7 @@
     }
 
     .animate-fadeInOut {
-        animation: fadeInOut 3s ease-in-out forwards;
+        animation: fadeInOut 5s ease-in-out forwards;
     }
 
     @keyframes rainbow-flow {
