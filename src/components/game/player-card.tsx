@@ -4,6 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 
+import { useEffect, useState } from 'react';
+
 import { formatWallet } from '@/utils/formatter';
 
 import { getStatusName, Player, PlayerStatus } from '@/types/user';
@@ -20,19 +22,29 @@ export default function PlayerCard({
     isActive: boolean;
     reaction: Reaction | undefined;
 }) {
+    const [displayReaction, setDisplayReaction] = useState<Reaction>();
+
+    useEffect(() => {
+        if (!reaction) return;
+        setDisplayReaction(reaction);
+
+        const timeout = setTimeout(() => setDisplayReaction(undefined), 5_000);
+        return () => clearTimeout(timeout);
+    }, [reaction]);
+
     return (
         <Card
             className={`relative transition-all duration-300 ${
                 isActive ? 'border-primary shadow-primary/30 shadow-lg' : 'opacity-70'
             }`}
         >
-            {reaction && (
+            {displayReaction && (
                 <div
                     key={reaction + player.wallet + Date.now()}
                     className='absolute top-1 right-1 text-3xl md:text-4xl z-20 p-1 animate-fadeInOut'
                     style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}
                 >
-                    {reaction.emoji}
+                    {displayReaction.emoji}
                 </div>
             )}
             <CardHeader className='flex flex-row items-center gap-3 sm:gap-4 p-3 sm:p-4'>

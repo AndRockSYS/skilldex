@@ -91,7 +91,7 @@ export interface Turn {
 }
 
 export interface Reaction {
-    sender: 'creator' | 'opponent';
+    sender: string;
     emoji: string;
     timestamp: Timestamp;
 }

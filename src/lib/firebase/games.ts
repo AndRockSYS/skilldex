@@ -12,14 +12,13 @@ import {
     startAfter,
     updateDoc,
 } from 'firebase/firestore';
-import { get, getDatabase, ref, update, remove } from 'firebase/database';
+import { get, getDatabase, ref, update, remove, child } from 'firebase/database';
 
 import config from '@/config/firebase.json';
 import { QUEUE_TIME_LIMIT } from '@/utils/constants';
 
 import { GameState, Lobby, QueuePlayer, Reaction, Turn } from '@/types/games';
 import { Player } from '@/types/user';
-import { FlaggedGame } from '@/types/admin';
 
 export default class GameDatabase {
     static app = initializeApp(config);
@@ -77,13 +76,13 @@ export default class GameDatabase {
     static async fetchTurn(gameId: number): Promise<Turn> {
         const turnRef = ref(this.database, `/turns/${gameId}`);
         const snapshot = await get(turnRef);
-        if (!snapshot.exists()) throw new Error('No turn was found');
+        if (!snapshot.exists() || !snapshot.val()) throw new Error('No turn was found');
         return snapshot.val();
     }
 
-    static async addEmoji(gameId: number, side: 'creator' | 'opponent', emoji: string) {
+    static async addEmoji(gameId: number, sender: string, emoji: string) {
         const reaction: Reaction = {
-            sender: side,
+            sender,
             emoji,
             timestamp: Date.now(),
         };
@@ -93,14 +92,10 @@ export default class GameDatabase {
     }
 
     static async fetchEmojis(gameId: number): Promise<Reaction[]> {
-        const reactionsRef = ref(this.database, `/emojis/${gameId}`);
-        const data = await get(reactionsRef);
-        return Object.values(data).sort((a, b) => a.timestamp - b.timestamp);
-    }
-
-    static async sendGameReport(report: FlaggedGame) {
-        const reportsRef = doc(this.firestore, 'reports');
-        await setDoc(reportsRef, report);
+        const data = await get(child(ref(this.database), `/emojis/${gameId}`));
+        return Object.values(data.val()).sort(
+            (a: any, b: any) => b.timestamp - a.timestamp
+        ) as Reaction[];
     }
 
     static async enqueue(
@@ -133,5 +128,15 @@ export default class GameDatabase {
         const gameRef = ref(this.database, `/queue/${gameId}`);
         const snapshot = await get(gameRef);
         return snapshot.val() as QueuePlayer;
+    }
+
+    static async clearGameData(gameId: number) {
+        const queueRef = ref(this.database, `/queue/${gameId}`);
+        const emojisRef = ref(this.database, `/emojis/${gameId}`);
+        const turnsRef = ref(this.database, `/turns/${gameId}`);
+
+        await remove(queueRef);
+        await remove(emojisRef);
+        await remove(turnsRef);
     }
 }
