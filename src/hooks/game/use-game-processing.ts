@@ -63,7 +63,7 @@ export default function useGameProcessing(gameId: number) {
     const isSpectator = useMemo(() => {
         if (!publicKey || !gameData) return true;
         return (
-            gameData.creator.wallet != publicKey.toString() ||
+            gameData.creator.wallet != publicKey.toString() &&
             gameData.opponent?.wallet != publicKey.toString()
         );
     }, [gameData, publicKey]);
@@ -145,15 +145,13 @@ export default function useGameProcessing(gameId: number) {
             await GameDatabase.updateWinner(gameData.id, seriesWinner);
             await GameDatabase.clearGameData(gameData.id);
 
-            console.log(gameData, publicKey, isSpectator);
-
-            // if (isSpectator) router.push('/lobby');
-            // else {
-            await dispatch(
-                addGame({ gameType: seriesWinner == publicKey.toString() ? 'won' : 'played' })
-            );
-            router.push(`/game/${gameData.id}/result`);
-            // }
+            if (isSpectator) router.push('/lobby');
+            else {
+                await dispatch(
+                    addGame({ gameType: seriesWinner == publicKey.toString() ? 'won' : 'played' })
+                );
+                router.push(`/game/${gameData.id}/result`);
+            }
         },
         [gameData, publicKey, isSpectator]
     );
