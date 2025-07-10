@@ -24,7 +24,9 @@ const initialState: UserStats = {
 export const userSlice = createSlice({
     name: 'user',
     initialState,
-    reducers: {},
+    reducers: {
+        clearUser: (state) => (state = initialState),
+    },
     extraReducers: (builder) => {
         builder.addCase(fetchUser.fulfilled, (_, action) => {
             return action.payload;
@@ -110,5 +112,7 @@ export const updateLastActivity = createAsyncThunk(
         return updatedUser;
     }
 );
+
+export const { clearUser } = userSlice.actions;
 
 export default userSlice.reducer;
