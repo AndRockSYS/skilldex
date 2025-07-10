@@ -83,7 +83,7 @@ const useProgram = () => {
                     new BN(Math.floor(expireTime / 1000))
                 )
                 .accounts({
-                    //@ts-ignore
+                    //@ts-expect-error
                     platformSigner: platformSigner.publicKey,
                     player: wallet.publicKey,
                 })
@@ -118,7 +118,7 @@ const useProgram = () => {
             const tx = await program.methods
                 .joinLobby(new BN(lobbyId))
                 .accounts({
-                    //@ts-ignore
+                    //@ts-expect-error
                     platformSigner: platformSigner.publicKey,
                     player: wallet.publicKey,
                 })
@@ -170,7 +170,7 @@ const useProgram = () => {
             const tx = await program.methods
                 .declareWinner(new BN(lobbyId))
                 .accounts({
-                    //@ts-ignore
+                    //@ts-expect-error
                     platformSigner: platformSigner.publicKey,
                     winner: wallet.publicKey,
                 })
@@ -234,7 +234,7 @@ const useProgram = () => {
             const tx = await program.methods
                 .updatePlatformSigner()
                 .accounts({
-                    //@ts-ignore
+                    //@ts-expect-error
                     platformSigner: platformSigner.publicKey,
                     newPlatformSigner: newSigner,
                 })
@@ -285,7 +285,7 @@ const useProgram = () => {
             const tx = await program.methods
                 .closeLobbyAsPlatform(new BN(lobbyId))
                 .accounts({
-                    //@ts-ignore
+                    //@ts-expect-error
                     platformSigner: platformSigner.publicKey,
                     playerAccount: creator,
                 })

@@ -43,7 +43,7 @@ import useProgram from '@/hooks/use-program';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useCallback, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 
 import GameDatabase from '@/lib/firebase/games';
@@ -58,7 +58,7 @@ import { games } from '@/content/games';
 import { getTokenName, Token } from '@/types/utils';
 import { GameState, GameType, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
 
-export default function CreateLobby() {
+function CreateLobby() {
     const searchParams = useSearchParams();
     const stake = searchParams.get('stake');
     const gameTypeId = searchParams.get('gameTypeId');
@@ -446,5 +446,13 @@ export default function CreateLobby() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function Suspended() {
+    return (
+        <Suspense>
+            <CreateLobby />
+        </Suspense>
     );
 }
