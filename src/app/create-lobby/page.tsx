@@ -78,7 +78,7 @@ export default function CreateLobby() {
         defaultValues: {
             gameType: games.find((g) => g.id == Number(gameTypeId))?.id ?? GameType.TicTacToe,
             token: Token.SOL,
-            stake: stake ? Number(stake) : MIN_STAKE,
+            stake: stake ? Number(stake) / LAMPORTS_PER_SOL : MIN_STAKE,
             expiration: EXPIRATION_OPTIONS[0].id,
             turnTimeLimit: TURN_LIMITS[0].id,
             matchFormat: Object.values(MatchFormat).includes(formatId)
