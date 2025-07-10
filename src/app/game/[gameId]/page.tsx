@@ -31,7 +31,7 @@ import { Label } from '@/components/ui/label';
 import PlayerCard from '@/components/game/player-card';
 
 import { useParams } from 'next/navigation';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@solana/wallet-adapter-react';
 import useGameProcessing from '@/hooks/game/use-game-processing';
@@ -62,18 +62,12 @@ export default function GameRoomPage() {
 
     const { publicKey } = useWallet();
 
-    const { gameData, turn, emojis, soundRef, turnTimeLeft } = useGameProcessing(Number(gameId));
+    const { isSpectator, gameData, turn, emojis, soundRef, turnTimeLeft } = useGameProcessing(
+        Number(gameId)
+    );
 
     const [reportReason, setReportReason] = useState('');
     const [isReporting, setIsReporting] = useState(false);
-
-    const isSpectator = useMemo(() => {
-        if (!publicKey || !gameData) return true;
-        return (
-            gameData.creator.wallet != publicKey.toString() &&
-            gameData.opponent?.wallet != publicKey.toString()
-        );
-    }, [gameData, publicKey]);
 
     const sendReaction = useCallback(
         async (emoji: string) => {

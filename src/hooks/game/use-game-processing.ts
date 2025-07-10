@@ -180,5 +180,5 @@ export default function useGameProcessing(gameId: number) {
         }
     }, [publicKey, turn, gameData?.gameType]);
 
-    return { gameData, turn, emojis, turnTimeLeft, endTurn, soundRef };
+    return { gameData, turn, emojis, turnTimeLeft, endTurn, soundRef, isSpectator };
 }
