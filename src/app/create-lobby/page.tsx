@@ -61,7 +61,7 @@ import { GameState, GameType, getMatchFormatName, Lobby, MatchFormat } from '@/t
 export default function CreateLobby() {
     const searchParams = useSearchParams();
     const stake = searchParams.get('stake');
-    const gameId = searchParams.get('gameId');
+    const gameTypeId = searchParams.get('gameTypeId');
     const matchFormatId = searchParams.get('matchFormatId');
 
     const dispatch = useAppDispatch();
@@ -76,7 +76,7 @@ export default function CreateLobby() {
     const form = useForm<LobbyForm>({
         resolver: zodResolver(lobbySchema),
         defaultValues: {
-            gameType: games.find((g) => g.id == Number(gameId))?.id ?? GameType.TicTacToe,
+            gameType: games.find((g) => g.id == Number(gameTypeId))?.id ?? GameType.TicTacToe,
             token: Token.SOL,
             stake: Number(stake) ?? MIN_STAKE,
             expiration: EXPIRATION_OPTIONS[0].id,
