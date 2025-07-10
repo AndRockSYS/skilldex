@@ -37,13 +37,13 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import useGameProcessing from '@/hooks/game/use-game-processing';
 
 import GameDatabase from '@/lib/firebase/games';
+import AppDatabase from '@/lib/firebase/client';
 
 import { gameEmojis } from '@/content/emojis';
 import { PLATFORM_COMMISSION } from '@/utils/constants';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
-import { formatWallet } from '@/utils/formatter';
-import { generateUID } from '@/utils/generator';
+import { convertTurnTimeLeft, formatWallet } from '@/utils/formatter';
 
 import {
     GameState,
@@ -52,7 +52,6 @@ import {
     getStateName,
     MatchFormat,
 } from '@/types/games';
-import { FlaggedGame } from '@/types/admin';
 import { getTokenName } from '@/types/utils';
 import { Player } from '@/types/user';
 
@@ -71,7 +70,7 @@ export default function GameRoomPage() {
     const isSpectator = useMemo(() => {
         if (!publicKey || !gameData) return true;
         return (
-            gameData.creator.wallet != publicKey.toString() ||
+            gameData.creator.wallet != publicKey.toString() &&
             gameData.opponent?.wallet != publicKey.toString()
         );
     }, [gameData, publicKey]);
@@ -87,11 +86,7 @@ export default function GameRoomPage() {
                 return;
             }
 
-            await GameDatabase.addEmoji(
-                gameData.id,
-                publicKey.toString() == gameData.creator.wallet ? 'creator' : 'opponent',
-                emoji
-            );
+            await GameDatabase.addEmoji(gameData.id, publicKey.toString(), emoji);
 
             toast({ title: 'Reaction Sent!', description: `You sent a ${emoji} emoji.` });
         },
@@ -110,17 +105,7 @@ export default function GameRoomPage() {
         setIsReporting(true);
 
         try {
-            const report: FlaggedGame = {
-                id: generateUID(Date.now()),
-                gameId: gameData.id,
-                reason: reportReason,
-                flaggedAt: Date.now(),
-                status: 'open',
-            };
-            if (publicKey) report.reporterWallet = publicKey.toString();
-
-            await GameDatabase.sendGameReport(report);
-
+            await AppDatabase.createGameReport(gameData.id, reportReason, publicKey?.toString());
             toast({
                 title: 'Report Submitted',
                 description: 'Thank you, your report has been submitted for review.',
@@ -186,9 +171,7 @@ export default function GameRoomPage() {
                     player={gameData.creator}
                     isActive={turn?.playerWallet == gameData.creator.wallet}
                     turnWallet={turn?.playerWallet ?? ''}
-                    reaction={emojis.findLast(
-                        (reaction) => reaction.sender == gameData.creator.wallet
-                    )}
+                    reaction={emojis.find((reaction) => reaction.sender == gameData.creator.wallet)}
                 />
 
                 <Card className='md:col-span-1 flex flex-col items-center justify-center p-4 sm:p-6 bg-card shadow-inner'>
@@ -222,9 +205,9 @@ export default function GameRoomPage() {
                             Waiting for opponent to join & stake...
                         </p>
                     )}
-                    {gameData.timeLimit && (
+                    {turn?.turnStart && (
                         <p className='text-xs text-muted-foreground mt-2'>
-                            Turn started: {new Date(gameData.timeLimit).toLocaleTimeString()}
+                            Turn started: {new Date(turn?.turnStart).toLocaleTimeString()}
                         </p>
                     )}
                 </Card>
@@ -234,7 +217,7 @@ export default function GameRoomPage() {
                         player={gameData.opponent as any}
                         isActive={turn?.playerWallet == gameData.opponent.wallet}
                         turnWallet={turn?.playerWallet ?? ''}
-                        reaction={emojis.findLast(
+                        reaction={emojis.find(
                             (reaction) => reaction.sender == (gameData.opponent as Player).wallet
                         )}
                     />
@@ -325,7 +308,7 @@ export default function GameRoomPage() {
                                 {(
                                     ((gameData.pool.initial * 2) / LAMPORTS_PER_SOL / 100) *
                                     (100 - PLATFORM_COMMISSION)
-                                ).toFixed(2)}{' '}
+                                ).toFixed(4)}{' '}
                                 {getTokenName(gameData.pool.token)}
                             </p>
                         </div>
@@ -352,45 +335,40 @@ export default function GameRoomPage() {
                         Platform fee: {PLATFORM_COMMISSION}% of total stake. Solana network fees
                         also apply to transactions.
                     </CardDescription>
-                    {gameData.state == GameState.Active &&
-                        turnTimeLeft !== null &&
-                        gameData.timeLimit && (
-                            <div>
-                                <div className='flex justify-between items-center mb-2'>
-                                    <p className='text-sm font-medium flex items-center'>
-                                        <Clock className='h-5 w-5 mr-2 text-primary' /> Time Left
-                                        for Game Turn:
-                                    </p>
-                                    <Badge
-                                        variant={
-                                            turnTimeLeft < gameData.timeLimit * 0.1
-                                                ? 'destructive'
-                                                : 'default'
-                                        }
-                                        className='text-base sm:text-lg px-3 py-1'
-                                    >
-                                        {Math.floor(turnTimeLeft / 60)}:
-                                        {String(turnTimeLeft % 60).padStart(2, '0')}
-                                    </Badge>
-                                </div>
-                                <Progress
-                                    value={(turnTimeLeft / gameData.timeLimit) * 100}
-                                    className='h-2 sm:h-3'
-                                />
-                                <CardDescription className='text-xs text-muted-foreground mt-2 flex items-center'>
-                                    <AlertTriangle className='h-4 w-4 mr-1 text-destructive' /> If
-                                    the timer reaches zero, your opponent wins this game by default.
-                                </CardDescription>
-                                {turnTimeLeft === 0 &&
-                                    !isSpectator &&
-                                    publicKey &&
-                                    turn?.playerWallet == publicKey.toString() && (
-                                        <p className='text-xs text-destructive mt-1'>
-                                            Processing...
-                                        </p>
-                                    )}
+                    {gameData.state == GameState.Active && (
+                        <div>
+                            <div className='flex justify-between items-center mb-2'>
+                                <p className='text-sm font-medium flex items-center'>
+                                    <Clock className='h-5 w-5 mr-2 text-primary' /> Time Left for
+                                    Game Turn:
+                                </p>
+                                <Badge
+                                    variant={
+                                        turnTimeLeft < gameData.timeLimit * 0.1
+                                            ? 'destructive'
+                                            : 'default'
+                                    }
+                                    className='text-base sm:text-lg px-3 py-1'
+                                >
+                                    {convertTurnTimeLeft(turnTimeLeft)}
+                                </Badge>
                             </div>
-                        )}
+                            <Progress
+                                value={(turnTimeLeft / gameData.timeLimit) * 100}
+                                className='h-2 sm:h-3'
+                            />
+                            <CardDescription className='text-xs text-muted-foreground mt-2 flex items-center'>
+                                <AlertTriangle className='h-4 w-4 mr-1 text-destructive' /> If the
+                                timer reaches zero, your opponent wins this game by default.
+                            </CardDescription>
+                            {turnTimeLeft == 0 &&
+                                !isSpectator &&
+                                publicKey &&
+                                turn?.playerWallet == publicKey.toString() && (
+                                    <p className='text-xs text-destructive mt-1'>Processing...</p>
+                                )}
+                        </div>
+                    )}
                 </CardContent>
                 {!isSpectator && gameData.state == GameState.Active && (
                     <CardFooter>

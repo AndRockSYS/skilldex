@@ -95,3 +95,12 @@ export function generateTaunt(
         .replace('{gameName}', getGameName(gameType))
         .replace('{link}', link);
 }
+
+export function convertTurnTimeLeft(timeLeft: number): string {
+    const totalSeconds = Math.floor(timeLeft / 1000);
+
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.floor(totalSeconds - minutes * 60);
+
+    return `${minutes < 10 ? `0${minutes}` : minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
+}
