@@ -84,29 +84,40 @@ export default function useGameProcessing(gameId: number) {
         return () => clearInterval(timer);
     }, [gameData, turn, turnTimeLeft]);
 
-    const endTurn = useCallback(async () => {
-        if (!gameData || !gameData.opponent || !turn) return;
+    const endTurn = useCallback(
+        async (winnerSide?: 'creator' | 'opponent') => {
+            if (!gameData || !gameData.opponent || !turn) return;
 
-        const turnGoesTo =
-            turn?.playerWallet == gameData.creator.wallet
-                ? gameData.opponent.wallet
-                : gameData.creator.wallet;
+            const turnGoesTo =
+                turn?.playerWallet == gameData.creator.wallet
+                    ? gameData.opponent.wallet
+                    : gameData.creator.wallet;
 
-        const endTimestamp = turn.turnStart + gameData.timeLimit;
-        const timeLeft = Math.max(endTimestamp - Date.now(), 0);
+            const endTimestamp = turn.turnStart + gameData.timeLimit;
+            const timeLeft = Math.max(endTimestamp - Date.now(), 0);
 
-        // todo end round at some point, depending on the game
+            if (winnerSide) {
+                await GameDatabase.updateScore(
+                    gameData.id,
+                    winnerSide,
+                    //@ts-expect-error
+                    gameData[winnerSide]?.score + 1
+                );
+                await refetchGameData();
+            }
 
-        if (timeLeft == 0) {
-            toast({
-                title: 'Turn Timed Out!',
-                description: `${turnGoesTo} wins this game.`,
-                variant: 'destructive',
-                duration: 5000,
-            });
-            await endRound(turnGoesTo);
-        } else await GameDatabase.updateTurn(gameData.id, turnGoesTo);
-    }, [turn, gameData]);
+            if (timeLeft == 0) {
+                toast({
+                    title: 'Turn Timed Out!',
+                    description: `${turnGoesTo} wins this game.`,
+                    variant: 'destructive',
+                    duration: 5000,
+                });
+                await endRound(turnGoesTo);
+            } else await GameDatabase.updateTurn(gameData.id, turnGoesTo);
+        },
+        [turn, gameData]
+    );
 
     const endRound = useCallback(
         async (roundWinner: string) => {
