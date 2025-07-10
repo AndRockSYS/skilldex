@@ -7,17 +7,18 @@ import { Card, CardHeader, CardTitle } from '../ui/card';
 import { formatWallet } from '@/utils/formatter';
 
 import { getStatusName, Player, PlayerStatus } from '@/types/user';
+import { Reaction } from '@/types/games';
 
 export default function PlayerCard({
     player,
     turnWallet,
     isActive,
-    displayedReaction,
+    reaction,
 }: {
     player: Player;
     turnWallet: string;
     isActive: boolean;
-    displayedReaction: string | null;
+    reaction: Reaction | undefined;
 }) {
     return (
         <Card
@@ -25,13 +26,13 @@ export default function PlayerCard({
                 isActive ? 'border-primary shadow-primary/30 shadow-lg' : 'opacity-70'
             }`}
         >
-            {displayedReaction && (
+            {reaction && (
                 <div
-                    key={displayedReaction + player.wallet + Date.now()}
+                    key={reaction + player.wallet + Date.now()}
                     className='absolute top-1 right-1 text-3xl md:text-4xl z-20 p-1 animate-fadeInOut'
                     style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}
                 >
-                    {displayedReaction}
+                    {reaction.emoji}
                 </div>
             )}
             <CardHeader className='flex flex-row items-center gap-3 sm:gap-4 p-3 sm:p-4'>

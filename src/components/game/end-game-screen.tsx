@@ -6,43 +6,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import ShareResult from './share-result';
 import Confetti from 'react-confetti';
-import { Award, Frown, Home } from 'lucide-react';
+import { ArrowUp, Award, DollarSign, Frown, Home, RotateCcw } from 'lucide-react';
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { Token } from '@/types/utils';
-import { GameType, getGameName, getMatchFormatName, MatchFormat } from '@/types/games';
-import { formatTokenAmount } from '@/utils/formatter';
 import { PLATFORM_COMMISSION } from '@/utils/constants';
 
+import { formatTokenAmount } from '@/utils/formatter';
+
+import { getGameName, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
+import { getTokenName } from '@/types/utils';
+
 interface Props {
-    gameId: number;
-    gameType: GameType;
-    matchFormat: MatchFormat;
-
+    lobby: Lobby;
     isWinner: boolean;
-
-    stake: {
-        pool: bigint;
-        token: Token;
-    };
-
-    scores?: {
-        creator: number;
-        oponent: number;
-    };
 }
 
-export default function EndGameScreen({
-    gameId,
-    gameType,
-    matchFormat,
-    isWinner,
-    stake,
-    scores,
-}: Props) {
+export default function EndGameScreen({ lobby, isWinner }: Props) {
     const [showConfetti, setShowConfetti] = useState(false);
     const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+
+    // todo call a tx in here
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -61,17 +45,19 @@ export default function EndGameScreen({
         }
     }, [isWinner]);
 
-    const commission = useMemo(() => stake.pool * BigInt(PLATFORM_COMMISSION / 100), [stake]);
+    const commission = useMemo(() => lobby.pool.initial * 2 * (PLATFORM_COMMISSION / 100), [lobby]);
+    const scores = useMemo(() => `${lobby.creator.score} - ${lobby.opponent?.score}`, [lobby]);
 
-    const message = useMemo(() => {
-        const score = `${scores?.creator}-${scores?.oponent})`;
-        const isSingle = matchFormat == MatchFormat.Single;
-
-        if (!isWinner) return `You Lost The Match. ${!isSingle ? `Score: ${score}` : ''}`;
-        return `You Won ${formatTokenAmount(stake.pool - commission, stake.token)} ${
-            stake.token
-        }! ${!isSingle ? `Series: ${score}` : ''}`;
-    }, [isWinner, scores, stake, commission]);
+    const message = useMemo(
+        () =>
+            !isWinner
+                ? `You Lost The Match.`
+                : `You Won ${formatTokenAmount(
+                      lobby.pool.initial * 2 - commission,
+                      lobby.pool.token
+                  )} ${getTokenName(lobby.pool.token)}!`,
+        [isWinner, lobby, scores, commission]
+    );
 
     return (
         <div className='flex flex-col items-center justify-center min-h-[70vh] text-center p-4'>
@@ -108,47 +94,38 @@ export default function EndGameScreen({
                             <div className='space-y-1.5'>
                                 <div className='flex justify-between'>
                                     <span>Game:</span>{' '}
-                                    <span className='font-medium'>{getGameName(gameType)}</span>
+                                    <span className='font-medium'>
+                                        {getGameName(lobby.gameType)}
+                                    </span>
                                 </div>
                                 <div className='flex justify-between'>
                                     <span>Format:</span>{' '}
                                     <span className='font-medium'>
-                                        {getMatchFormatName(matchFormat)}
+                                        {getMatchFormatName(lobby.format)}
                                     </span>
                                 </div>
-                                {matchFormat !== MatchFormat.Single && (
+                                {lobby.format !== MatchFormat.Single && (
                                     <div className='flex justify-between'>
                                         <span>Final Score:</span>{' '}
-                                        <span className='font-medium'>
-                                            {scores?.creator} - {scores?.oponent}
-                                        </span>
+                                        <span className='font-medium'>{scores}</span>
                                     </div>
                                 )}
-                                <div className='flex justify-between'>
-                                    <span>Your Stake:</span>{' '}
-                                    <span className='font-medium'>
-                                        {formatTokenAmount(stake.pool / BigInt(2), stake.token)}{' '}
-                                        {stake.token}
-                                    </span>
-                                </div>
-                                <div className='flex justify-between'>
-                                    <span>Opponent's Stake:</span>{' '}
-                                    <span className='font-medium'>
-                                        {formatTokenAmount(stake.pool / BigInt(2), stake.token)}{' '}
-                                        {stake.token}
-                                    </span>
-                                </div>
                                 <Separator className='my-1.5' />
                                 <div className='flex justify-between'>
                                     <span>Total Prize Pool:</span>{' '}
                                     <span className='font-medium'>
-                                        {formatTokenAmount(stake.pool, stake.token)} {stake.token}
+                                        {formatTokenAmount(
+                                            lobby.pool.initial * 2,
+                                            lobby.pool.token
+                                        )}{' '}
+                                        {getTokenName(lobby.pool.token)}
                                     </span>
                                 </div>
                                 <div className='flex justify-between'>
                                     <span>Platform Fee ({PLATFORM_COMMISSION}%):</span>{' '}
                                     <span className='font-medium text-destructive'>
-                                        -{formatTokenAmount(commission, stake.token)} {stake.token}
+                                        -{formatTokenAmount(commission, lobby.pool.token)}{' '}
+                                        {getTokenName(lobby.pool.token)}
                                     </span>
                                 </div>
                                 <Separator className='my-1.5' />
@@ -157,8 +134,11 @@ export default function EndGameScreen({
                                         Your Net Winnings:
                                     </span>
                                     <span className='font-bold text-primary'>
-                                        {formatTokenAmount(stake.pool - commission, stake.token)}{' '}
-                                        {stake.token}
+                                        {formatTokenAmount(
+                                            lobby.pool.initial * 2 - commission,
+                                            lobby.pool.token
+                                        )}{' '}
+                                        {getTokenName(lobby.pool.token)}
                                     </span>
                                 </div>
                             </div>
@@ -171,41 +151,43 @@ export default function EndGameScreen({
                             : "Don't give up! Every match is a new learning opportunity."}
                     </p>
 
-                    {
-                        !isWinner && gameId && <></>
-                        // todo remake links after solana game implementation
-                        // <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
-                        //     <Button
-                        //         variant='outline'
-                        //         size='lg'
-                        //         asChild
-                        //         className='text-sm sm:text-base'
-                        //     >
-                        //         <Link
-                        //             href={`/create-challenge?game=${gameIdSlug}&stake=${originalStakeAmount}&token=${token}&matchFormat=${matchFormat}`}
-                        //         >
-                        //             <RotateCcw className='mr-2 h-4 w-4 sm:h-5 sm:w-5' /> Rematch (
-                        //             {getMatchFormatName(matchFormat)})
-                        //         </Link>
-                        //     </Button>
-                        //     <Button
-                        //         variant='outline'
-                        //         size='lg'
-                        //         asChild
-                        //         className='border-accent text-accent hover:bg-accent/10 hover:text-accent text-sm sm:text-base'
-                        //     >
-                        //         <Link
-                        //             href={`/create-challenge?game=${gameIdSlug}&stake=${
-                        //                 originalStakeAmount * 2
-                        //             }&token=${token}&matchFormat=single`}
-                        //         >
-                        //             <DollarSign className='mr-1 h-4 w-4 sm:h-5 sm:w-5' />
-                        //             <ArrowUp className='mr-2 h-3 w-3 sm:h-4 sm:w-4 -ml-1' />
-                        //             Double or Nothing (Single)
-                        //         </Link>
-                        //     </Button>
-                        // </div>
-                    }
+                    {!isWinner && lobby && (
+                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
+                            <Button
+                                variant='outline'
+                                size='lg'
+                                asChild
+                                className='text-sm sm:text-base'
+                            >
+                                <Link
+                                    href={`/create-challenge?gameTypeId=${
+                                        lobby.gameType
+                                    }&stake=${Number(lobby.pool.initial)}&matchFormat=${
+                                        lobby.format
+                                    }`}
+                                >
+                                    <RotateCcw className='mr-2 h-4 w-4 sm:h-5 sm:w-5' /> Rematch (
+                                    {getMatchFormatName(lobby.format)})
+                                </Link>
+                            </Button>
+                            <Button
+                                variant='outline'
+                                size='lg'
+                                asChild
+                                className='border-accent text-accent hover:bg-accent/10 hover:text-accent text-sm sm:text-base'
+                            >
+                                <Link
+                                    href={`/create-challenge?gameTypeId=${lobby.gameType}&stake=${
+                                        Number(lobby.pool.initial) * 2
+                                    }`}
+                                >
+                                    <DollarSign className='mr-1 h-4 w-4 sm:h-5 sm:w-5' />
+                                    <ArrowUp className='mr-2 h-3 w-3 sm:h-4 sm:w-4 -ml-1' />
+                                    Double or Nothing (Single)
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
 
                     <Button
                         size='lg'
@@ -220,8 +202,8 @@ export default function EndGameScreen({
                         text={`I just ${
                             isWinner ? 'won my match' : 'played a game'
                         } on SKILLDEX.IO! ${
-                            isWinner && matchFormat != MatchFormat.Single
-                                ? `Final Score: ${scores?.creator}-${scores?.oponent}`
+                            isWinner && lobby.format != MatchFormat.Single
+                                ? `Final Score: ${scores}`
                                 : ''
                         } 🏆 Come join the fun on Solana:`}
                     />

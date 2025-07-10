@@ -1,7 +1,5 @@
 'use client';
 
-// todo refactor after adding games
-
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Swords, Coins, Clock, Bot, AlertTriangle, Eye, Info, Trophy, Flag } from 'lucide-react';
+import { Swords, Coins, Clock, AlertTriangle, Eye, Info, Trophy, Flag } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -32,481 +30,55 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import PlayerCard from '@/components/game/player-card';
 
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useParams } from 'next/navigation';
+import { useState, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useQuery } from '@tanstack/react-query';
+import useGameProcessing from '@/hooks/game/use-game-processing';
 
-import { reportGameActivity } from '@/actions/game';
+import GameDatabase from '@/lib/firebase/games';
 
-import { cn } from '@/lib/utils';
-
-import { Timestamp } from 'firebase/firestore';
-import { ActivePlayer } from '@/types/user';
-import { getGameName, Lobby } from '@/types/games';
+import { gameEmojis } from '@/content/emojis';
+import { PLATFORM_COMMISSION } from '@/utils/constants';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 import { formatWallet } from '@/utils/formatter';
+import { generateUID } from '@/utils/generator';
+
+import {
+    GameState,
+    getGameName,
+    getMatchFormatName,
+    getStateName,
+    MatchFormat,
+} from '@/types/games';
+import { FlaggedGame } from '@/types/admin';
+import { getTokenName } from '@/types/utils';
+import { Player } from '@/types/user';
 
 export default function GameRoomPage() {
     const { gameId } = useParams();
+
     const { toast } = useToast();
-    const router = useRouter();
 
     const { publicKey } = useWallet();
 
-    const [players, setPlayers] = useState<ActivePlayer[]>([]);
-    const [timeLeft, setTimeLeft] = useState<number | null>(null);
-    const [isAITurn, setIsAITurn] = useState(false);
+    const { gameData, turn, emojis, soundRef, turnTimeLeft } = useGameProcessing(Number(gameId));
 
-    const [originalTitle, setOriginalTitle] = useState('');
-    const [notificationPermission, setNotificationPermission] = useState<
-        NotificationPermission | 'not_supported'
-    >('default');
-    const [isTabVisible, setIsTabVisible] = useState(true);
-    const notificationSoundRef = useRef<HTMLAudioElement | null>(null);
-
-    const [player1DisplayedReaction, setPlayer1DisplayedReaction] = useState<string | null>(null);
-    const [player2DisplayedReaction, setPlayer2DisplayedReaction] = useState<string | null>(null);
-    const [lastP1ReactionTs, setLastP1ReactionTs] = useState<number | null>(null);
-    const [lastP2ReactionTs, setLastP2ReactionTs] = useState<number | null>(null);
     const [reportReason, setReportReason] = useState('');
     const [isReporting, setIsReporting] = useState(false);
 
-    const { data: gameData } = useQuery({
-        queryKey: ['game', gameId],
-        queryFn: async () => {
-            // todo fetch the game by its id
-            return {} as Lobby;
-        },
-        throwOnError: (error) => {
-            toast({
-                title: 'Error',
-                description: 'Game not found in demo data.',
-                variant: 'destructive',
-            });
-            router.push('/lobby');
-            throw error;
-        },
-    });
-
     const isSpectator = useMemo(() => {
         if (!publicKey || !gameData) return true;
-        if (
-            gameData.creator.wallet == publicKey.toString() ||
-            gameData.opponent?.wallet == publicKey.toString()
-        )
-            return false;
-
-        return true;
+        return (
+            gameData.creator.wallet != publicKey.toString() ||
+            gameData.opponent?.wallet != publicKey.toString()
+        );
     }, [gameData, publicKey]);
-
-    useEffect(() => {
-        if (gameData && gameData.winner) {
-            if (
-                !publicKey ||
-                gameData.creator.wallet != publicKey.toString() ||
-                gameData.opponent.wallet != publicKey.toString()
-            ) {
-                toast({
-                    title: 'Game Over',
-                    description: `${getGameName(gameData.gameType)} has concluded. Winner: ${
-                        gameData.winner ? formatWallet(gameData.winner) : 'N/A'
-                    }`,
-                    variant: 'default',
-                });
-                router.push('/lobby');
-            } else router.push(`/game/${gameId}/result`);
-        }
-    }, [gameData, publicKey]);
-
-    useEffect(() => {
-        if (!gameData) return;
-
-        const p1Wallet = gameData.creatorWallet;
-        const p1IsCurrentUser = publicKey ? p1Wallet === publicKey.toBase58() : false;
-        const p1: Player = {
-            id: p1Wallet,
-            name: p1IsCurrentUser && !isSpectator ? 'You' : `Player ${p1Wallet.substring(0, 4)}`,
-            avatarUrl: `https://placehold.co/128x128.png`,
-            isCurrentUser: p1IsCurrentUser && !isSpectator,
-            status: gameData.currentPlayerId === p1Wallet ? 'Thinking...' : 'Online',
-            score: gameData.player1Score || 0,
-        };
-
-        let p2: Player | null = null;
-        if (gameData.opponentWallet) {
-            const p2Wallet = gameData.opponentWallet;
-            const p2IsCurrentUser = publicKey ? p2Wallet === publicKey.toBase58() : false;
-            p2 = {
-                id: p2Wallet,
-                name:
-                    p2IsCurrentUser && !isSpectator ? 'You' : `Player ${p2Wallet.substring(0, 4)}`,
-                avatarUrl: `https://placehold.co/128x128.png`,
-                isCurrentUser: p2IsCurrentUser && !isSpectator,
-                status: gameData.currentPlayerId === p2Wallet ? 'Thinking...' : 'Online',
-                score: gameData.player2Score || 0,
-            };
-        } else if (gameData.status === 'open') {
-            p2 = {
-                id: 'player2_waiting',
-                name: 'Waiting...',
-                avatarUrl: 'https://placehold.co/128x128.png',
-                isCurrentUser: false,
-                status: 'Waiting...',
-                score: 0,
-            };
-        }
-
-        setPlayers(p2 ? [p1, p2] : [p1]);
-
-        if (
-            gameData.turnTimeLimit &&
-            gameData.turnStartTimestamp &&
-            gameData.status === 'in_play'
-        ) {
-            const turnEndTime =
-                gameData.turn.turnStartTimestamp.toDate().getTime() + gameData.turnTimeLimit * 1000;
-            const newTimeLeft = Math.max(0, Math.floor((turnEndTime - Date.now()) / 1000));
-            setTimeLeft(newTimeLeft);
-        } else if (gameData.turnTimeLimit) {
-            setTimeLeft(gameData.turnTimeLimit);
-        } else {
-            setTimeLeft(60);
-        }
-
-        if (gameData.player1LastEmoji) {
-            const newTs = gameData.player1LastEmoji.timestamp.toMillis();
-            if (!lastP1ReactionTs || newTs > lastP1ReactionTs) {
-                setPlayer1DisplayedReaction(gameData.player1LastEmoji.emoji);
-                setLastP1ReactionTs(newTs);
-                setTimeout(() => setPlayer1DisplayedReaction(null), 3000);
-            }
-        }
-
-        if (gameData.player2LastEmoji && gameData.opponentWallet) {
-            const newTs = gameData.player2LastEmoji.timestamp.toMillis();
-            if (!lastP2ReactionTs || newTs > lastP2ReactionTs) {
-                setPlayer2DisplayedReaction(gameData.player2LastEmoji.emoji);
-                setLastP2ReactionTs(newTs);
-                setTimeout(() => setPlayer2DisplayedReaction(null), 3000);
-            }
-        }
-    }, [gameData, publicKey, lastP1ReactionTs, lastP2ReactionTs]);
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setOriginalTitle(document.title);
-            setIsTabVisible(!document.hidden);
-
-            if (!('Notification' in window)) {
-                setNotificationPermission('not_supported');
-            } else {
-                setNotificationPermission(Notification.permission);
-            }
-
-            const handleVisibilityChange = () => setIsTabVisible(!document.hidden);
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-
-            if (!notificationSoundRef.current) {
-                notificationSoundRef.current = new Audio('/sounds/notification-alert.mp3');
-                notificationSoundRef.current.load();
-            }
-
-            return () => {
-                document.removeEventListener('visibilitychange', handleVisibilityChange);
-                if (notificationSoundRef.current) {
-                    notificationSoundRef.current.pause();
-                    notificationSoundRef.current = null;
-                }
-            };
-        }
-    }, []);
-
-    useEffect(() => {
-        if (
-            notificationPermission === 'default' &&
-            typeof window !== 'undefined' &&
-            'Notification' in window &&
-            Notification.requestPermission
-        ) {
-            Notification.requestPermission().then((permission) => {
-                setNotificationPermission(permission);
-                if (permission === 'denied') {
-                    toast({
-                        title: 'Notifications Blocked',
-                        description: "You won't receive browser notifications for your turn.",
-                        variant: 'default',
-                        duration: 7000,
-                    });
-                } else if (permission === 'granted') {
-                    toast({
-                        title: 'Notifications Enabled',
-                        description: "You'll get a pop-up for your turn if the tab is inactive.",
-                        variant: 'default',
-                        duration: 5000,
-                    });
-                }
-            });
-        }
-    }, [notificationPermission, toast]);
-
-    useEffect(() => {
-        if (
-            typeof window === 'undefined' ||
-            !originalTitle ||
-            !gameData ||
-            !publicKey ||
-            isSpectator
-        )
-            return;
-
-        const isMyTurn = gameData.currentPlayerId === publicKey.toBase58();
-        const me = players.find((p) => p.id === publicKey.toBase58());
-
-        const isEffectivelyOffline = !isTabVisible;
-        const appName = 'SKILLDEX.IO';
-        let soundPlayedForThisNotification = false;
-
-        const playTurnSound = () => {
-            if (
-                notificationSoundRef.current &&
-                notificationSoundRef.current.readyState >= 2 &&
-                !soundPlayedForThisNotification
-            ) {
-                notificationSoundRef.current
-                    .play()
-                    .catch((e) =>
-                        console.warn(
-                            'Notification sound play failed. User interaction might be needed first.',
-                            e
-                        )
-                    );
-                soundPlayedForThisNotification = true;
-            } else if (
-                notificationSoundRef.current &&
-                notificationSoundRef.current.readyState < 2
-            ) {
-                console.warn('Notification sound not ready to play.');
-            }
-        };
-
-        if (isMyTurn && me) {
-            if (isEffectivelyOffline) {
-                if (document.title !== `❗ Your Turn! - ${appName}`) {
-                    document.title = `❗ Your Turn! - ${appName}`;
-                    playTurnSound();
-                }
-                if (notificationPermission === 'granted') {
-                    const notification = new Notification(`It's your turn, ${me.name}!`, {
-                        body: `Time to make your move in ${gameData.gameName} on ${appName}.`,
-                        icon: '/logo_icon_placeholder_192.png',
-                        tag: `skilldex-io-turn-${gameId}`,
-                        renotify: true,
-                    });
-                    notification.onclick = () => {
-                        window.focus();
-                        router.push(`/game/${gameId}`);
-                        notification.close();
-                    };
-                }
-                console.log(
-                    `NOTIFICATION_LOG: User ${
-                        me.id
-                    } (wallet: ${publicKey.toBase58()}) is effectively offline for game ${gameId}. Backend should verify offline status and consider triggering an email notification (lookup email from user profile for ${
-                        me.id
-                    }).`
-                );
-            } else {
-                if (document.title !== `❗ Your Turn! - ${appName}`) {
-                    document.title = `❗ Your Turn! - ${appName}`;
-                    if (typeof document.hasFocus === 'function' && !document.hasFocus()) {
-                        playTurnSound();
-                    }
-                }
-            }
-        } else {
-            if (document.title !== originalTitle) {
-                document.title = originalTitle;
-            }
-        }
-    }, [
-        gameData,
-        players,
-        notificationPermission,
-        originalTitle,
-        gameId,
-        isTabVisible,
-        publicKey,
-        router,
-        toast,
-        isSpectator,
-    ]);
-
-    const checkSeriesEnd = useCallback(
-        (p1Score: number, p2Score: number, matchFormat: MatchFormat): string | null => {
-            if (!gameData) return null;
-            const targetScore =
-                matchFormat === 'best_of_3' ? 2 : matchFormat === 'best_of_5' ? 3 : 1;
-            if (p1Score >= targetScore) return gameData.creatorWallet;
-            if (p2Score >= targetScore) return gameData.opponentWallet || null;
-            return null;
-        },
-        [gameData]
-    );
-
-    const handleEndSingleGame = useCallback(
-        async (singleGameWinnerId: string | null) => {
-            if (!gameData || !publicKey || isSpectator || !singleGameWinnerId) return;
-
-            let newPlayer1Score = gameData.player1Score || 0;
-            let newPlayer2Score = gameData.player2Score || 0;
-            const matchFormat = gameData.matchFormat || 'single';
-
-            if (singleGameWinnerId === gameData.creatorWallet) {
-                newPlayer1Score++;
-            } else if (singleGameWinnerId === gameData.opponentWallet) {
-                newPlayer2Score++;
-            }
-
-            const seriesWinnerId = checkSeriesEnd(newPlayer1Score, newPlayer2Score, matchFormat);
-
-            if (seriesWinnerId) {
-                console.log(
-                    `(Demo Mode) GAME ENDED: Challenge ${gameId} winner is ${seriesWinnerId}.`
-                );
-                toast({
-                    title: 'Match Over!',
-                    description: `Player ${seriesWinnerId.substring(0, 6)}... wins the series!`,
-                    variant: 'default',
-                    duration: 10000,
-                });
-
-                await updateUserStats(seriesWinnerId, {
-                    pointsIncrement: 10,
-                    challengesWonIncrement: 1,
-                });
-
-                // In demo mode, we just navigate to the win/loss page
-                if (seriesWinnerId === publicKey.toBase58()) {
-                    router.push(`/game/${gameId}/win`);
-                } else {
-                    router.push(`/game/${gameId}/lose`);
-                }
-            } else {
-                // Series continues, update scores and prepare for next game
-                const nextPlayerId =
-                    gameData.currentPlayerId === gameData.creatorWallet
-                        ? gameData.opponentWallet
-                        : gameData.creatorWallet;
-
-                const updatedGameData = {
-                    ...gameData,
-                    player1Score: newPlayer1Score,
-                    player2Score: newPlayer2Score,
-                    currentPlayerId: nextPlayerId,
-                    turnStartTimestamp: Timestamp.now(),
-                };
-                setGameData(updatedGameData as GameDataFromFirestore); // Update local state for demo
-                toast({
-                    title: 'Game Won!',
-                    description: `Player ${singleGameWinnerId.substring(
-                        0,
-                        6
-                    )}... takes this game. Next game starting...`,
-                    variant: 'default',
-                });
-            }
-        },
-        [gameData, gameId, publicKey, isSpectator, toast, checkSeriesEnd, router]
-    );
-
-    const handleTurnEnd = useCallback(async () => {
-        if (!gameData || !publicKey || !players.length || isSpectator) return;
-
-        const currentPlayerTimedOut = players.find((p) => p.id === gameData.currentPlayerId);
-        if (!currentPlayerTimedOut) return;
-
-        const singleGameWinnerId =
-            gameData.currentPlayerId === gameData.creatorWallet
-                ? gameData.opponentWallet
-                : gameData.creatorWallet;
-
-        if (!singleGameWinnerId) {
-            console.error('Could not determine winner upon turn timeout.');
-            toast({
-                title: 'Game Logic Error',
-                description: 'Could not determine winner from timeout.',
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        toast({
-            title: 'Turn Timed Out!',
-            description: `${currentPlayerTimedOut.name} ran out of time. ${
-                players.find((p) => p.id === singleGameWinnerId)?.name || 'Opponent'
-            } wins this game.`,
-            variant: 'destructive',
-            duration: 7000,
-        });
-
-        await handleEndSingleGame(singleGameWinnerId);
-        setIsAITurn(false);
-    }, [players, gameData, toast, publicKey, isSpectator, handleEndSingleGame]);
-
-    useEffect(() => {
-        if (isSpectator || timeLeft === null || timeLeft <= 0 || gameData?.status !== 'in_play') {
-            if (
-                timeLeft === 0 &&
-                gameData?.status === 'in_play' &&
-                !isSpectator &&
-                publicKey &&
-                gameData.currentPlayerId === publicKey.toBase58()
-            ) {
-                handleTurnEnd();
-            }
-            return;
-        }
-        const timer = setInterval(() => {
-            setTimeLeft((prevTime) => (prevTime !== null && prevTime > 0 ? prevTime - 1 : 0));
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [timeLeft, handleTurnEnd, gameData, isSpectator, publicKey]);
-
-    const simulateEndSingleGame = useCallback(
-        async (didWinThisGame: boolean) => {
-            if (!gameData || !publicKey || isSpectator) {
-                toast({
-                    title: 'Action Blocked',
-                    description:
-                        'Cannot simulate game end. Conditions not met (e.g. not logged in, spectator, or game data missing).',
-                    variant: 'destructive',
-                });
-                return;
-            }
-
-            const singleGameWinnerId = didWinThisGame
-                ? publicKey.toBase58()
-                : players.find((p) => p.id !== publicKey.toBase58())?.id || null;
-
-            if (!singleGameWinnerId) {
-                toast({
-                    title: 'Simulation Error',
-                    description:
-                        'Cannot determine game winner for simulation. Opponent might be missing or you are the only player.',
-                    variant: 'destructive',
-                });
-                return;
-            }
-            await handleEndSingleGame(singleGameWinnerId);
-        },
-        [gameData, publicKey, isSpectator, handleEndSingleGame, toast, players]
-    );
 
     const sendReaction = useCallback(
         async (emoji: string) => {
-            if (!gameData || !publicKey || isSpectator || gameData.status !== 'in_play') {
+            if (!gameData || !publicKey || gameData.state != GameState.Active) {
                 toast({
                     title: 'Reaction Failed',
                     description: 'Cannot send reaction. Conditions not met.',
@@ -515,21 +87,15 @@ export default function GameRoomPage() {
                 return;
             }
 
-            const myWallet = publicKey.toBase58();
-            let updatedGameData = { ...gameData };
+            await GameDatabase.addEmoji(
+                gameData.id,
+                publicKey.toString() == gameData.creator.wallet ? 'creator' : 'opponent',
+                emoji
+            );
 
-            if (myWallet === gameData.creatorWallet) {
-                updatedGameData.player1LastEmoji = { emoji, timestamp: Timestamp.now() };
-            } else if (gameData.opponentWallet && myWallet === gameData.opponentWallet) {
-                updatedGameData.player2LastEmoji = { emoji, timestamp: Timestamp.now() };
-            } else {
-                return;
-            }
-
-            setGameData(updatedGameData as GameDataFromFirestore);
             toast({ title: 'Reaction Sent!', description: `You sent a ${emoji} emoji.` });
         },
-        [gameData, publicKey, isSpectator, toast]
+        [gameData, publicKey]
     );
 
     const handleReportSubmit = useCallback(async () => {
@@ -542,37 +108,35 @@ export default function GameRoomPage() {
             return;
         }
         setIsReporting(true);
+
         try {
-            const result = await reportGameActivity({
+            const report: FlaggedGame = {
+                id: generateUID(Date.now()),
                 gameId: gameData.id,
-                reporterWallet: publicKey ? publicKey.toBase58() : undefined,
                 reason: reportReason,
+                flaggedAt: Date.now(),
+                status: 'open',
+            };
+            if (publicKey) report.reporterWallet = publicKey.toString();
+
+            await GameDatabase.sendGameReport(report);
+
+            toast({
+                title: 'Report Submitted',
+                description: 'Thank you, your report has been submitted for review.',
             });
-            if (result.success) {
-                toast({
-                    title: 'Report Submitted',
-                    description: 'Thank you, your report has been submitted for review.',
-                });
-                setReportReason('');
-            } else {
-                toast({
-                    title: 'Report Failed',
-                    description: result.message,
-                    variant: 'destructive',
-                });
-            }
         } catch (error: any) {
             toast({
                 title: 'Report Error',
-                description: error.message || 'Could not submit report.',
+                description: 'Could not submit report.',
                 variant: 'destructive',
             });
         } finally {
             setIsReporting(false);
         }
-    }, [gameData, reportReason, publicKey, toast, gameId]);
+    }, [gameData, reportReason, publicKey]);
 
-    if (!gameData || !players.length) {
+    if (!gameData) {
         return (
             <div className='flex justify-center items-center h-screen'>
                 <p>Loading game...</p>
@@ -582,28 +146,33 @@ export default function GameRoomPage() {
 
     return (
         <div className='space-y-6 md:space-y-8 relative'>
+            <audio src='/sounds/turn.mp3' ref={soundRef}></audio>
             <div className='flex flex-col md:flex-row justify-between items-center gap-4'>
                 <div className='text-center md:text-left'>
                     <h1 className='font-headline text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight flex items-center justify-center md:justify-start'>
                         <Swords className='h-7 w-7 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-primary' />
-                        {gameData.gameName}
+                        {getGameName(gameData.gameType)}
                         <span className='text-muted-foreground text-xl sm:text-2xl ml-2'>
-                            (ID: {gameId.substring(0, 6)}...)
+                            (ID: {gameId})
                         </span>
-                        {isSpectator && gameData.status === 'in_play' && (
+                        {isSpectator && gameData.state == GameState.Active && (
                             <Badge variant='secondary' className='ml-3 text-sm flex items-center'>
                                 <Eye className='mr-1.5 h-4 w-4' />
                                 Spectating
                             </Badge>
                         )}
                     </h1>
-                    {isSeries && gameData.status === 'in_play' && (
-                        <p className='text-primary font-semibold text-base sm:text-lg mt-1'>
-                            {matchFormatName} - Score: {players[0]?.name}{' '}
-                            {gameData.player1Score || 0} vs {players[1]?.name || 'P2'}{' '}
-                            {gameData.player2Score || 0}
-                        </p>
-                    )}
+                    {gameData.format != MatchFormat.Single &&
+                        gameData.state == GameState.Active &&
+                        gameData.opponent && (
+                            <p className='text-primary font-semibold text-base sm:text-lg mt-1'>
+                                {getMatchFormatName(gameData.format)} - Score:{' '}
+                                {gameData.creator.score}{' '}
+                                {gameData.creator.name ?? formatWallet(gameData.creator.wallet)} vs{' '}
+                                {gameData.opponent.name ?? formatWallet(gameData.opponent.wallet)}{' '}
+                                {gameData.opponent.score}
+                            </p>
+                        )}
                 </div>
                 <Link href='/lobby'>
                     <Button variant='outline' className='w-full md:w-auto'>
@@ -614,11 +183,12 @@ export default function GameRoomPage() {
 
             <div className='grid md:grid-cols-3 gap-4 md:gap-6 items-start'>
                 <PlayerCard
-                    player={players[0]}
-                    isActive={
-                        players[0].id === gameData.currentPlayerId && gameData.status === 'in_play'
-                    }
-                    displayedReaction={player1DisplayedReaction}
+                    player={gameData.creator}
+                    isActive={turn?.playerWallet == gameData.creator.wallet}
+                    turnWallet={turn?.playerWallet ?? ''}
+                    reaction={emojis.findLast(
+                        (reaction) => reaction.sender == gameData.creator.wallet
+                    )}
                 />
 
                 <Card className='md:col-span-1 flex flex-col items-center justify-center p-4 sm:p-6 bg-card shadow-inner'>
@@ -638,90 +208,39 @@ export default function GameRoomPage() {
                             </Link>
                         </Button>
                     </div>
-                    <div
-                        data-ai-hint='tic-tac-toe board'
-                        className='w-full max-w-[200px] sm:max-w-[256px] aspect-square bg-muted rounded-lg flex items-center justify-center text-muted-foreground shadow-md mb-4'
-                    >
-                        <div className='grid grid-cols-3 gap-1 sm:gap-2 p-1 sm:p-2 w-full h-full'>
-                            {Array(9)
-                                .fill(null)
-                                .map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className={cn(
-                                            'w-full h-full bg-background rounded flex items-center justify-center text-2xl sm:text-3xl font-bold transition-colors',
-                                            !isSpectator &&
-                                                gameData.status === 'in_play' &&
-                                                'hover:bg-muted cursor-pointer'
-                                        )}
-                                    ></div>
-                                ))}
-                        </div>
-                    </div>
+                    // todo add game here
                     <p className='text-sm text-muted-foreground text-center'>
-                        {gameData.status === 'in_play'
-                            ? `${currentPlayerDetails?.name || 'N/A'}'s turn.`
-                            : gameData.status === 'open'
+                        {gameData.state == GameState.Active
+                            ? `${turn?.playerWallet}'s turn.`
+                            : gameData.state == GameState.Open
                             ? 'Waiting for opponent...'
-                            : `Game Finished. Winner: ${
-                                  gameData.winnerWallet
-                                      ? gameData.winnerWallet.substring(0, 4) +
-                                        '...' +
-                                        gameData.winnerWallet.substring(
-                                            gameData.winnerWallet.length - 4
-                                        )
-                                      : 'N/A'
-                              }`}
+                            : gameData.winner &&
+                              `Game Finished. Winner: ${formatWallet(gameData.winner)}`}
                     </p>
-                    {isAITurn && !isSpectator && (
-                        <p className='text-sm text-accent flex items-center mt-2'>
-                            <Bot className='h-4 w-4 mr-1' /> AI is thinking...
-                        </p>
-                    )}
-                    {gameData.status === 'open' && (
+                    {gameData.state == GameState.Open && (
                         <p className='text-lg font-semibold text-primary mt-2'>
                             Waiting for opponent to join & stake...
                         </p>
                     )}
-
-                    {!isSpectator && gameData.status === 'in_play' && (
-                        <div className='mt-4 flex flex-col sm:flex-row gap-2 w-full max-w-xs'>
-                            <Button
-                                size='sm'
-                                variant='destructive'
-                                onClick={() => simulateEndSingleGame(false)}
-                                className='flex-1'
-                            >
-                                Simulate Game Loss
-                            </Button>
-                            <Button
-                                size='sm'
-                                className='bg-green-500 hover:bg-green-600 flex-1'
-                                onClick={() => simulateEndSingleGame(true)}
-                            >
-                                Simulate Game Win
-                            </Button>
-                        </div>
-                    )}
-                    {gameData.turnStartTimestamp && (
+                    {gameData.timeLimit && (
                         <p className='text-xs text-muted-foreground mt-2'>
-                            Turn started:{' '}
-                            {gameData.turnStartTimestamp.toDate().toLocaleTimeString()}
+                            Turn started: {new Date(gameData.timeLimit).toLocaleTimeString()}
                         </p>
                     )}
                 </Card>
 
-                {players[1] && (
+                {gameData.opponent && (
                     <PlayerCard
-                        player={players[1]}
-                        isActive={
-                            players[1].id === gameData.currentPlayerId &&
-                            gameData.status === 'in_play'
-                        }
-                        displayedReaction={player2DisplayedReaction}
+                        player={gameData.opponent as any}
+                        isActive={turn?.playerWallet == gameData.opponent.wallet}
+                        turnWallet={turn?.playerWallet ?? ''}
+                        reaction={emojis.findLast(
+                            (reaction) => reaction.sender == (gameData.opponent as Player).wallet
+                        )}
                     />
                 )}
-                {!players[1] && gameData.maxPlayers > 1 && gameData.status !== 'finished' && (
+
+                {gameData.state == GameState.Open && (
                     <Card className='opacity-70'>
                         <CardHeader className='flex flex-row items-center gap-3 sm:gap-4 p-3 sm:p-4'>
                             <Avatar className='h-12 w-12 sm:h-16 sm:w-16 border-2 border-muted-foreground'>
@@ -745,7 +264,7 @@ export default function GameRoomPage() {
                 )}
             </div>
 
-            {!isSpectator && gameData.status === 'in_play' && (
+            {!isSpectator && gameData.state == GameState.Active && (
                 <Card className='mt-6'>
                     <CardHeader className='p-3 sm:p-4 !pb-2'>
                         <CardTitle className='text-center font-headline text-lg sm:text-xl'>
@@ -753,14 +272,16 @@ export default function GameRoomPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className='p-3 sm:p-4 flex flex-wrap justify-center items-center gap-2'>
-                        {reactionEmojis.map((emoji) => (
+                        {gameEmojis.map((emoji) => (
                             <Button
                                 key={emoji}
                                 variant='outline'
                                 size='icon'
                                 className='text-xl sm:text-2xl w-10 h-10 sm:w-12 sm:h-12 rounded-full hover:bg-primary/10 focus:ring-accent'
                                 onClick={() => sendReaction(emoji)}
-                                disabled={isSpectator || !gameData || gameData.status !== 'in_play'}
+                                disabled={
+                                    isSpectator || !gameData || gameData.state != GameState.Active
+                                }
                                 title={`Send ${emoji} reaction`}
                             >
                                 {emoji}
@@ -782,7 +303,7 @@ export default function GameRoomPage() {
                             <p className='text-xs sm:text-sm text-muted-foreground'>Match Format</p>
                             <p className='font-semibold text-base sm:text-lg flex items-center justify-center'>
                                 <Trophy className='h-4 w-4 sm:h-5 sm:w-5 mr-1 text-muted-foreground' />{' '}
-                                {matchFormatName}
+                                {getMatchFormatName(gameData.format)}
                             </p>
                         </div>
                         <div>
@@ -791,7 +312,8 @@ export default function GameRoomPage() {
                             </p>
                             <p className='font-semibold text-base sm:text-lg flex items-center justify-center'>
                                 <Coins className='h-4 w-4 sm:h-5 sm:w-5 mr-1 text-yellow-500' />{' '}
-                                {gameData.stakeAmount} {gameData.token}
+                                {(gameData.pool.initial / LAMPORTS_PER_SOL).toFixed(2)}{' '}
+                                {getTokenName(gameData.pool.token)}
                             </p>
                         </div>
                         <div>
@@ -800,7 +322,11 @@ export default function GameRoomPage() {
                             </p>
                             <p className='font-semibold text-base sm:text-lg text-primary flex items-center justify-center'>
                                 <Coins className='h-4 w-4 sm:h-5 sm:w-5 mr-1 text-primary' />{' '}
-                                {netPrizeForWinner.toFixed(4)} {gameData.token}
+                                {(
+                                    ((gameData.pool.initial * 2) / LAMPORTS_PER_SOL / 100) *
+                                    (100 - PLATFORM_COMMISSION)
+                                ).toFixed(2)}{' '}
+                                {getTokenName(gameData.pool.token)}
                             </p>
                         </div>
                         <div>
@@ -808,27 +334,27 @@ export default function GameRoomPage() {
                             <p className='font-semibold text-base sm:text-lg flex items-center justify-center'>
                                 <Badge
                                     variant={
-                                        gameData.status === 'in_play'
+                                        gameData.state == GameState.Active
                                             ? 'default'
-                                            : gameData.status === 'open'
+                                            : gameData.state == GameState.Open
                                             ? 'secondary'
                                             : 'destructive'
                                     }
                                     className='text-xs sm:text-sm capitalize'
                                 >
-                                    {gameData.status.replace('_', ' ')}
+                                    {getStateName(gameData.state)}
                                 </Badge>
                             </p>
                         </div>
                     </div>
                     <Separator />
                     <CardDescription className='text-xs text-muted-foreground text-center'>
-                        Platform fee: {PLATFORM_FEE_PERCENT}% of total stake. Solana network fees
+                        Platform fee: {PLATFORM_COMMISSION}% of total stake. Solana network fees
                         also apply to transactions.
                     </CardDescription>
-                    {gameData.status === 'in_play' &&
-                        timeLeft !== null &&
-                        gameData.turnTimeLimit && (
+                    {gameData.state == GameState.Active &&
+                        turnTimeLeft !== null &&
+                        gameData.timeLimit && (
                             <div>
                                 <div className='flex justify-between items-center mb-2'>
                                     <p className='text-sm font-medium flex items-center'>
@@ -837,28 +363,28 @@ export default function GameRoomPage() {
                                     </p>
                                     <Badge
                                         variant={
-                                            timeLeft < gameData.turnTimeLimit * 0.1
+                                            turnTimeLeft < gameData.timeLimit * 0.1
                                                 ? 'destructive'
                                                 : 'default'
                                         }
                                         className='text-base sm:text-lg px-3 py-1'
                                     >
-                                        {Math.floor(timeLeft / 60)}:
-                                        {String(timeLeft % 60).padStart(2, '0')}
+                                        {Math.floor(turnTimeLeft / 60)}:
+                                        {String(turnTimeLeft % 60).padStart(2, '0')}
                                     </Badge>
                                 </div>
                                 <Progress
-                                    value={(timeLeft / gameData.turnTimeLimit) * 100}
+                                    value={(turnTimeLeft / gameData.timeLimit) * 100}
                                     className='h-2 sm:h-3'
                                 />
                                 <CardDescription className='text-xs text-muted-foreground mt-2 flex items-center'>
                                     <AlertTriangle className='h-4 w-4 mr-1 text-destructive' /> If
                                     the timer reaches zero, your opponent wins this game by default.
                                 </CardDescription>
-                                {timeLeft === 0 &&
+                                {turnTimeLeft === 0 &&
                                     !isSpectator &&
                                     publicKey &&
-                                    gameData.currentPlayerId === publicKey.toBase58() && (
+                                    turn?.playerWallet == publicKey.toString() && (
                                         <p className='text-xs text-destructive mt-1'>
                                             Processing...
                                         </p>
@@ -866,7 +392,7 @@ export default function GameRoomPage() {
                             </div>
                         )}
                 </CardContent>
-                {!isSpectator && gameData.status === 'in_play' && (
+                {!isSpectator && gameData.state == GameState.Active && (
                     <CardFooter>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>

@@ -12,8 +12,6 @@ import { useQuery } from '@tanstack/react-query';
 
 import GameDatabase from '@/lib/firebase/games';
 
-import { MatchFormat } from '@/types/games';
-
 export default function WinPage() {
     const { gameId } = useParams();
     const { toast } = useToast();
@@ -64,18 +62,5 @@ export default function WinPage() {
             </div>
         );
 
-    return (
-        <EndGameScreen
-            gameId={lobbyData.id}
-            gameType={lobbyData.gameType}
-            matchFormat={lobbyData.format}
-            isWinner={lobbyData.winner ? lobbyData.winner == publicKey.toString() : false}
-            stake={{ pool: BigInt(lobbyData.pool.initial * 2), token: lobbyData.pool.token }}
-            scores={
-                lobbyData.format == MatchFormat.Single
-                    ? undefined
-                    : { creator: lobbyData.creator.score, oponent: lobbyData.opponent?.score ?? 0 }
-            }
-        />
-    );
+    return <EndGameScreen lobby={lobbyData} isWinner={lobbyData.winner == publicKey.toString()} />;
 }
