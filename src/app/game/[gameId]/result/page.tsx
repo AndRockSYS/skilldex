@@ -7,7 +7,6 @@ import EndGameScreen from '@/components/game/end-game-screen';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'next/navigation';
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import GameDatabase from '@/lib/firebase/games';
@@ -35,11 +34,6 @@ export default function WinPage() {
         },
         enabled: !!gameId && !Number.isNaN(Number(gameId)),
     });
-
-    useEffect(() => {
-        if (!gameId)
-            toast({ title: 'Error', description: 'No game ID provided.', variant: 'destructive' });
-    }, [gameId]);
 
     if (isFetching || !lobbyData || !publicKey)
         return (
