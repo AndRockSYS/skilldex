@@ -35,3 +35,10 @@ export const PDA_AFFIXES = {
     platform: 'platform',
     suffix: 'skilldex3gf634bf',
 };
+
+export const GAME_SETTINGS = {
+    connectFour: {
+        columns: 7,
+        rows: 6,
+    },
+};
