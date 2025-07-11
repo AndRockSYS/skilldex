@@ -37,6 +37,7 @@ import { GameState, GameType, Lobby } from '@/types/games';
 export default function LobbyPage() {
     const { lobbyId } = useParams();
 
+    const [state, setState] = useState<GameState>(GameState.Open);
     const [searchTerm, setSearchTerm] = useState('');
     const [gameType, setGameType] = useState<GameType>();
     const [minStake, setMinStake] = useState<string>('');
@@ -50,13 +51,13 @@ export default function LobbyPage() {
         hasPreviousPage,
         fetchPreviousPage,
     } = useInfiniteQuery<Lobby[], Error>({
-        queryKey: ['lobby', 'all'],
+        queryKey: ['lobby', 'all', state],
         queryFn: async ({ pageParam }) => {
             if (lobbyId && !isNaN(Number(lobbyId))) {
                 const lobby = await GameDatabase.fetchLobbyById(Number(lobbyId));
                 return lobby ? [lobby] : [];
             }
-            return await GameDatabase.fetchLobbies(pageParam as number | undefined);
+            return await GameDatabase.fetchLobbies(state, pageParam as number | undefined);
         },
         getNextPageParam: (lastPageLobbies) => {
             if (lastPageLobbies.length === 0) return undefined;
@@ -203,7 +204,11 @@ export default function LobbyPage() {
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
-            <Tabs defaultValue={GameState.Open.toString()} className='w-full'>
+            <Tabs
+                defaultValue={GameState.Open.toString()}
+                onValueChange={(value) => setState(Number(value) as GameState)}
+                className='w-full'
+            >
                 <TabsList className='grid w-full grid-cols-3'>
                     <TabsTrigger value={GameState.Open.toString()}>Open Challenges</TabsTrigger>
                     <TabsTrigger value={GameState.Active.toString()}>Active Matches</TabsTrigger>
@@ -227,7 +232,7 @@ export default function LobbyPage() {
                                     onClick={() =>
                                         fetchPreviousPage().then(() => setPage(page - 1))
                                     }
-                                    disabled={hasPreviousPage}
+                                    disabled={hasPreviousPage || page == 0}
                                 >
                                     <ChevronLeft className='mr-2 h-4 w-4' /> Previous
                                 </Button>

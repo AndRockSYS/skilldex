@@ -11,6 +11,7 @@ import {
     setDoc,
     startAfter,
     updateDoc,
+    where,
 } from 'firebase/firestore';
 import { get, getDatabase, ref, update, remove, child, set } from 'firebase/database';
 
@@ -38,9 +39,10 @@ export default class GameDatabase {
         return snapshot.data() as Lobby;
     }
 
-    static async fetchLobbies(lastCreatedAt?: number): Promise<Lobby[]> {
+    static async fetchLobbies(state: GameState, lastCreatedAt?: number): Promise<Lobby[]> {
         let lobbiesQuery = query(
             collection(this.firestore, 'games'),
+            where('state', '==', state),
             orderBy('createdAt', 'desc'),
             limit(5)
         );
@@ -155,7 +157,6 @@ export default class GameDatabase {
 
         const snapshot = await get(gameRef);
         if (!snapshot.exists()) throw new Error('Snapshot does not exist');
-        console.log(snapshot.val());
 
         return snapshot.val() as T;
     }
