@@ -187,7 +187,9 @@ export default function GameRoomPage() {
                             </Link>
                         </Button>
                     </div>
-                    {gameData.gameType == GameType.ConnectFour ? (
+                    {gameData.state == GameState.Finished ? (
+                        <></>
+                    ) : gameData.gameType == GameType.ConnectFour ? (
                         <ConnectFour lobby={gameData} turn={turn} endTurn={endTurn} />
                     ) : gameData.gameType == GameType.TicTacToe ? (
                         <TicTacToe lobby={gameData} turn={turn} endTurn={endTurn} />
