@@ -92,7 +92,6 @@ export default function ConnectFour({ lobby, turn, endTurn }: Props) {
                         newBoard[row][col] = currentSide;
 
                         await GameDatabase.uploadGameData(lobby.id, newBoard);
-                        await GameDatabase.uploadGameData(lobby.id, newBoard);
 
                         if (hasWinner(row, col)) await endTurn(currentSide);
                         else if (isTie) {
