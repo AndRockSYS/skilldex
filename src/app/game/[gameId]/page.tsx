@@ -29,7 +29,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import PlayerCard from '@/components/game/player-card';
-import Board from '@/components/game/connect-four/board';
+import ConnectFour from '@/components/game/connect-four/board';
+import TicTacToe from '@/components/game/tic-tac-toe/board';
 
 import { useParams } from 'next/navigation';
 import { useState, useCallback } from 'react';
@@ -187,7 +188,9 @@ export default function GameRoomPage() {
                         </Button>
                     </div>
                     {gameData.gameType == GameType.ConnectFour ? (
-                        <Board lobby={gameData} turn={turn} endTurn={endTurn} />
+                        <ConnectFour lobby={gameData} turn={turn} endTurn={endTurn} />
+                    ) : gameData.gameType == GameType.TicTacToe ? (
+                        <TicTacToe lobby={gameData} turn={turn} endTurn={endTurn} />
                     ) : (
                         <></>
                     )}
