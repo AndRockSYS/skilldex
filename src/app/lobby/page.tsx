@@ -32,7 +32,7 @@ import GameDatabase from '@/lib/firebase/games';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { games } from '@/content/games';
 
-import { GameState, GameType } from '@/types/games';
+import { GameState, GameType, Lobby } from '@/types/games';
 
 export default function LobbyPage() {
     const { lobbyId } = useParams();
@@ -47,24 +47,23 @@ export default function LobbyPage() {
     const {
         data: lobbies,
         fetchNextPage,
-        fetchPreviousPage,
-        hasNextPage,
         hasPreviousPage,
-    } = useInfiniteQuery({
+        fetchPreviousPage,
+    } = useInfiniteQuery<Lobby[], Error>({
         queryKey: ['lobby', 'all'],
         queryFn: async ({ pageParam }) => {
-            setPage(pageParam);
             if (lobbyId && !isNaN(Number(lobbyId))) {
                 const lobby = await GameDatabase.fetchLobbyById(Number(lobbyId));
                 return lobby ? [lobby] : [];
             }
-            const lobbies = await GameDatabase.fetchLobbies(pageParam);
-            return Array.isArray(lobbies) ? lobbies : [];
+            return await GameDatabase.fetchLobbies(pageParam as number | undefined);
         },
-        getNextPageParam: (lastPage) =>
-            lastPage.length > 0 ? lastPage[lastPage.length - 1].id : 0,
-        initialPageParam: 0,
-        initialData: { pages: [[]], pageParams: [] },
+        getNextPageParam: (lastPageLobbies) => {
+            if (lastPageLobbies.length === 0) return undefined;
+            return lastPageLobbies[lastPageLobbies.length - 1].createdAt;
+        },
+        initialPageParam: undefined,
+        initialData: { pages: [[]], pageParams: [undefined] },
         refetchInterval: 3_000,
     });
 
@@ -225,7 +224,9 @@ export default function LobbyPage() {
                                 <Button
                                     variant='outline'
                                     size='sm'
-                                    onClick={() => fetchPreviousPage()}
+                                    onClick={() =>
+                                        fetchPreviousPage().then(() => setPage(page - 1))
+                                    }
                                     disabled={hasPreviousPage}
                                 >
                                     <ChevronLeft className='mr-2 h-4 w-4' /> Previous
@@ -233,8 +234,8 @@ export default function LobbyPage() {
                                 <Button
                                     variant='outline'
                                     size='sm'
-                                    onClick={() => fetchNextPage()}
-                                    disabled={hasNextPage}
+                                    onClick={() => fetchNextPage().then(() => setPage(page + 1))}
+                                    disabled={lobbies.pages[page].length == 0}
                                 >
                                     Next <ChevronRight className='ml-2 h-4 w-4' />
                                 </Button>

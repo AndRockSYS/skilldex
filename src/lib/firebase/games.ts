@@ -38,17 +38,20 @@ export default class GameDatabase {
         return snapshot.data() as Lobby;
     }
 
-    static async fetchLobbies(lastGameId?: number): Promise<Lobby[]> {
+    static async fetchLobbies(lastCreatedAt?: number): Promise<Lobby[]> {
         let lobbiesQuery = query(
             collection(this.firestore, 'games'),
             orderBy('createdAt', 'desc'),
             limit(5)
         );
 
-        if (lastGameId) lobbiesQuery = query(lobbiesQuery, startAfter(lastGameId));
+        if (lastCreatedAt) lobbiesQuery = query(lobbiesQuery, startAfter(lastCreatedAt));
 
         const snapshot = await getDocs(lobbiesQuery);
-        return snapshot.docs.map((snap) => snap.data()) as Lobby[];
+        const lobbies = snapshot.docs
+            .map((snap) => snap.data() as Lobby)
+            .filter((lobby) => typeof lobby.createdAt === 'number');
+        return lobbies;
     }
 
     static async addOpponent(gameId: number, opponent: Player) {
