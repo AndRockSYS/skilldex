@@ -1,25 +1,45 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 import { GAME_SETTINGS } from '@/utils/constants';
 
-import { Lobby } from '@/types/games';
+import { Lobby, Turn } from '@/types/games';
+import { useQuery } from '@tanstack/react-query';
+import GameDatabase from '@/lib/firebase/games';
 
 const initialBoard: Board = Array(GAME_SETTINGS.connectFour.rows)
-    .fill(null)
-    .map(() => Array(GAME_SETTINGS.connectFour.columns).fill(null));
+    .fill('none')
+    .map(() => Array(GAME_SETTINGS.connectFour.columns).fill('none'));
 
-type Side = 'creator' | 'opponent' | null;
+type Side = 'creator' | 'opponent' | 'none';
 type Board = Side[][];
 
 interface Props {
     lobby: Lobby;
+    turn: Turn | undefined;
+    endTurn: (winnerSide?: 'creator' | 'opponent') => Promise<void>;
 }
 
-export default function ConnectFour({ lobby }: Props) {
-    const [board, setBoard] = useState<Board>(initialBoard);
-    const [currentSide, setCurrentSide] = useState<Side>('opponent');
+export default function ConnectFour({ lobby, turn, endTurn }: Props) {
+    const { data: board } = useQuery({
+        queryKey: ['gameData', 'connectFour'],
+        queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
+        initialData: initialBoard,
+        refetchInterval: 1_000,
+    });
+
+    const { publicKey } = useWallet();
+    const currentSide = useMemo(
+        () => (lobby.creator.wallet == turn?.playerWallet ? 'creator' : 'opponent'),
+        [lobby, turn]
+    );
+
+    const isPlaced = useRef(false);
+    useEffect(() => {
+        if (publicKey?.toString() == turn?.playerWallet) isPlaced.current = false;
+    }, [publicKey, turn]);
 
     const hasWinner = useCallback(
         (row: number, col: number) => {
@@ -56,36 +76,35 @@ export default function ConnectFour({ lobby }: Props) {
         [board, currentSide]
     );
 
-    const isTie = useMemo(() => board.every((row) => row.every((cell) => cell !== null)), [board]);
+    const isTie = useMemo(() => board.every((row) => row.every((cell) => cell != 'none')), [board]);
 
     const handleColumnClick = useCallback(
-        (col: number): void => {
+        async (col: number) => {
+            if (isPlaced.current || publicKey?.toString() != turn?.playerWallet) return;
+            isPlaced.current = true;
+
             const newBoard: Board = board.map((row) => [...row]);
-            let placed: boolean = false;
 
             for (let row = GAME_SETTINGS.connectFour.rows - 1; row >= 0; row--) {
-                if (!newBoard[row][col]) {
+                if (newBoard[row][col] == 'none') {
                     newBoard[row][col] = currentSide;
 
-                    placed = true;
-                    setBoard(newBoard);
+                    await GameDatabase.uploadGameData(lobby.id, newBoard);
 
-                    if (hasWinner(row, col)) {
-                        // todo handle winner
-                    } else if (isTie) {
+                    if (hasWinner(row, col)) await endTurn(currentSide);
+                    else if (isTie) {
                         // todo handle tie
-                    } else {
-                        // todo handle turn change
-                    }
+                    } else await endTurn();
+
                     break;
                 }
             }
         },
-        [board, currentSide, isTie]
+        [board, currentSide, publicKey, turn, isTie]
     );
 
     return (
-        <div className='flex flex-col items-center p-4 bg-gray-100 min-h-screen'>
+        <div className='flex flex-col items-center p-4 '>
             <div className='grid gap-2 bg-blue-800 p-4 rounded-lg'>
                 {board.map((row, rowIndex) => (
                     <div key={rowIndex} className='flex gap-2'>
@@ -93,7 +112,7 @@ export default function ConnectFour({ lobby }: Props) {
                             <button
                                 key={colIndex}
                                 onClick={() => handleColumnClick(colIndex)}
-                                className='w-12 h-12 rounded-full bg-white flex items-center justify-center'
+                                className=' rounded-full bg-white flex items-center justify-center'
                                 disabled={!!lobby.winner}
                             >
                                 <div

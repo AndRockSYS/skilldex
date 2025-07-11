@@ -47,6 +47,7 @@ import { convertTurnTimeLeft, formatWallet } from '@/utils/formatter';
 
 import {
     GameState,
+    GameType,
     getGameName,
     getMatchFormatName,
     getStateName,
@@ -54,6 +55,7 @@ import {
 } from '@/types/games';
 import { getTokenName } from '@/types/utils';
 import { Player } from '@/types/user';
+import Board from '@/components/game/connect-four/board';
 
 export default function GameRoomPage() {
     const { gameId } = useParams();
@@ -62,9 +64,8 @@ export default function GameRoomPage() {
 
     const { publicKey } = useWallet();
 
-    const { isSpectator, gameData, turn, emojis, soundRef, turnTimeLeft } = useGameProcessing(
-        Number(gameId)
-    );
+    const { isSpectator, gameData, turn, endTurn, emojis, soundRef, turnTimeLeft } =
+        useGameProcessing(Number(gameId));
 
     const [reportReason, setReportReason] = useState('');
     const [isReporting, setIsReporting] = useState(false);
@@ -185,7 +186,11 @@ export default function GameRoomPage() {
                             </Link>
                         </Button>
                     </div>
-                    // todo add game here
+                    {gameData.gameType == GameType.ConnectFour ? (
+                        <Board lobby={gameData} turn={turn} endTurn={endTurn} />
+                    ) : (
+                        <></>
+                    )}
                     <p className='text-sm text-muted-foreground text-center'>
                         {gameData.state == GameState.Active
                             ? `${turn?.playerWallet}'s turn.`
@@ -352,8 +357,10 @@ export default function GameRoomPage() {
                                 className='h-2 sm:h-3'
                             />
                             <CardDescription className='text-xs text-muted-foreground mt-2 flex items-center'>
-                                <AlertTriangle className='h-4 w-4 mr-1 text-destructive' /> If the
-                                timer reaches zero, your opponent wins this game by default.
+                                <AlertTriangle className='h-4 w-4 mr-1 text-destructive' />{' '}
+                                {turn?.playerWallet == publicKey?.toString()
+                                    ? `If the timer reaches zero, your opponent wins this game by default.`
+                                    : `If the timer reaches zero, you win this game by default`}
                             </CardDescription>
                             {turnTimeLeft == 0 &&
                                 !isSpectator &&
