@@ -29,6 +29,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import PlayerCard from '@/components/game/player-card';
+import Board from '@/components/game/connect-four/board';
 
 import { useParams } from 'next/navigation';
 import { useState, useCallback } from 'react';
@@ -55,7 +56,6 @@ import {
 } from '@/types/games';
 import { getTokenName } from '@/types/utils';
 import { Player } from '@/types/user';
-import Board from '@/components/game/connect-four/board';
 
 export default function GameRoomPage() {
     const { gameId } = useParams();

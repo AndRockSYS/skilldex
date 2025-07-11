@@ -88,16 +88,22 @@ export default function ConnectFour({ lobby, turn, endTurn }: Props) {
 
             for (let row = GAME_SETTINGS.connectFour.rows - 1; row >= 0; row--) {
                 if (newBoard[row][col] == 'none') {
-                    newBoard[row][col] = currentSide;
+                    if (newBoard[row][col] == 'none') {
+                        newBoard[row][col] = currentSide;
 
-                    await GameDatabase.uploadGameData(lobby.id, newBoard);
+                        await GameDatabase.uploadGameData(lobby.id, newBoard);
+                        await GameDatabase.uploadGameData(lobby.id, newBoard);
 
-                    if (hasWinner(row, col)) await endTurn(currentSide);
-                    else if (isTie) {
-                        // todo handle tie
-                    } else await endTurn();
+                        if (hasWinner(row, col)) await endTurn(currentSide);
+                        else if (isTie) {
+                            if (hasWinner(row, col)) await endTurn(currentSide);
+                            else if (isTie) {
+                                // todo handle tie
+                            } else await endTurn();
+                        } else await endTurn();
 
-                    break;
+                        break;
+                    }
                 }
             }
         },
