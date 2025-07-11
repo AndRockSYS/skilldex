@@ -12,7 +12,7 @@ import {
     startAfter,
     updateDoc,
 } from 'firebase/firestore';
-import { get, getDatabase, ref, update, remove, child } from 'firebase/database';
+import { get, getDatabase, ref, update, remove, child, set } from 'firebase/database';
 
 import config from '@/config/firebase.json';
 import { QUEUE_TIME_LIMIT } from '@/utils/constants';
@@ -134,9 +134,26 @@ export default class GameDatabase {
         const queueRef = ref(this.database, `/queue/${gameId}`);
         const emojisRef = ref(this.database, `/emojis/${gameId}`);
         const turnsRef = ref(this.database, `/turns/${gameId}`);
+        const dataRef = ref(this.database, `/data/${gameId}`);
 
         await remove(queueRef);
         await remove(emojisRef);
         await remove(turnsRef);
+        await remove(dataRef);
+    }
+
+    static async uploadGameData(gameId: number, data: any) {
+        const gameRef = ref(this.database, `/data/${gameId}`);
+        await set(gameRef, data);
+    }
+
+    static async fetchGameData<T>(gameId: number): Promise<T> {
+        const gameRef = ref(this.database, `/data/${gameId}`);
+
+        const snapshot = await get(gameRef);
+        if (!snapshot.exists()) throw new Error('Snapshot does not exist');
+        console.log(snapshot.val());
+
+        return snapshot.val() as T;
     }
 }
