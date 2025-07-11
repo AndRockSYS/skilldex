@@ -5,6 +5,7 @@ import { Badge } from '../ui/badge';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 
 import { useEffect, useState } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 import { formatWallet } from '@/utils/formatter';
 
@@ -22,6 +23,7 @@ export default function PlayerCard({
     isActive: boolean;
     reaction: Reaction | undefined;
 }) {
+    const { publicKey } = useWallet();
     const [displayReaction, setDisplayReaction] = useState<Reaction>();
 
     useEffect(() => {
@@ -61,7 +63,7 @@ export default function PlayerCard({
                 <div>
                     <CardTitle className='font-headline text-lg sm:text-xl'>
                         {player.name ?? formatWallet(player.wallet)}{' '}
-                        {player.wallet == turnWallet && '(You)'}
+                        {player.wallet == publicKey?.toString() && '(You)'}
                     </CardTitle>
                     <div className='flex items-center mt-1'>
                         <Badge
