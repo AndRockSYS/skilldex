@@ -60,7 +60,8 @@ export default function PlayerCard({
                 </Avatar>
                 <div>
                     <CardTitle className='font-headline text-lg sm:text-xl'>
-                        {player.name} {player.wallet == turnWallet && '(You)'}
+                        {player.name ?? formatWallet(player.wallet)}{' '}
+                        {player.wallet == turnWallet && '(You)'}
                     </CardTitle>
                     <div className='flex items-center mt-1'>
                         <Badge

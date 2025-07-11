@@ -8,7 +8,9 @@ import ShareResult from './share-result';
 import Confetti from 'react-confetti';
 import { Award, DollarSign, Frown, Home, RotateCcw } from 'lucide-react';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import useProgram from '@/hooks/use-program';
+import { useToast } from '@/hooks/use-toast';
 
 import { PLATFORM_COMMISSION } from '@/utils/constants';
 
@@ -16,7 +18,6 @@ import { formatTokenAmount } from '@/utils/formatter';
 
 import { getGameName, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
 import { getTokenName } from '@/types/utils';
-import useProgram from '@/hooks/use-program';
 
 interface Props {
     lobby: Lobby;
@@ -24,13 +25,30 @@ interface Props {
 }
 
 export default function EndGameScreen({ lobby, isWinner }: Props) {
-    const { declareWinner } = useProgram();
-
+    const { toast } = useToast();
     const [showConfetti, setShowConfetti] = useState(false);
     const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
+    const { declareWinner } = useProgram();
+    const hasReceived = useRef(false);
+
     useEffect(() => {
-        if (isWinner) declareWinner(lobby.id);
+        if (isWinner && !hasReceived.current)
+            declareWinner(lobby.id).then((data) => {
+                if (data?.error)
+                    toast({
+                        title: 'An Error Occured',
+                        description: data.error,
+                        variant: 'destructive',
+                    });
+                else
+                    toast({
+                        title: 'Congratulations!',
+                        description: 'You have received your prize!',
+                        variant: 'default',
+                    });
+                hasReceived.current = true;
+            });
     }, []);
 
     useEffect(() => {

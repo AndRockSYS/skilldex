@@ -89,9 +89,7 @@ export default function useGameProcessing(gameId: number) {
             if (!gameData || !gameData.opponent || !turn) return;
 
             const turnGoesTo =
-                turn?.playerWallet == gameData.creator.wallet
-                    ? gameData.opponent.wallet
-                    : gameData.creator.wallet;
+                turn?.playerWallet == gameData.creator.wallet ? 'opponent' : 'creator';
 
             const endTimestamp = turn.turnStart + gameData.timeLimit;
             const timeLeft = Math.max(endTimestamp - Date.now(), 0);
@@ -104,9 +102,9 @@ export default function useGameProcessing(gameId: number) {
                     gameData[winnerSide]?.score + 1
                 );
                 await refetchGameData();
-            }
 
-            if (timeLeft == 0) {
+                await endRound(winnerSide);
+            } else if (timeLeft == 0) {
                 toast({
                     title: 'Turn Timed Out!',
                     description: `${turnGoesTo} wins this game.`,
@@ -114,22 +112,25 @@ export default function useGameProcessing(gameId: number) {
                     duration: 5000,
                 });
                 await endRound(turnGoesTo);
-            } else await GameDatabase.updateTurn(gameData.id, turnGoesTo);
+                //@ts-expect-error
+            } else await GameDatabase.updateTurn(gameData.id, gameData[turnGoesTo].wallet);
         },
         [turn, gameData]
     );
 
     const endRound = useCallback(
-        async (roundWinner: string) => {
+        async (winnerSide: 'creator' | 'opponent') => {
             if (!gameData || !gameData.opponent) return;
 
-            const side = roundWinner == gameData.creator.wallet ? 'creator' : 'opponent';
-
             const updatedGameData = { ...gameData };
-            if (!updatedGameData[side]) return;
+            if (!updatedGameData[winnerSide]) return;
 
-            updatedGameData[side].score += 1;
-            await GameDatabase.updateScore(gameData.id, side, updatedGameData[side].score);
+            updatedGameData[winnerSide].score += 1;
+            await GameDatabase.updateScore(
+                gameData.id,
+                winnerSide,
+                updatedGameData[winnerSide].score
+            );
 
             await refetchGameData();
 
@@ -137,6 +138,7 @@ export default function useGameProcessing(gameId: number) {
             if (seriesWinner) endSeries(seriesWinner);
             else {
                 // todo start a new round
+                await GameDatabase.updateTurn(gameData.id, updatedGameData[winnerSide].wallet);
             }
         },
         [gameData]
