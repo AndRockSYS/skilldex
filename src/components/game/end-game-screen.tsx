@@ -33,7 +33,8 @@ export default function EndGameScreen({ lobby, isWinner }: Props) {
     const hasReceived = useRef(false);
 
     useEffect(() => {
-        if (isWinner && !hasReceived.current)
+        if (isWinner && !hasReceived.current) {
+            hasReceived.current = true;
             declareWinner(lobby.id).then((data) => {
                 if (data?.error)
                     toast({
@@ -47,8 +48,8 @@ export default function EndGameScreen({ lobby, isWinner }: Props) {
                         description: 'You have received your prize!',
                         variant: 'default',
                     });
-                hasReceived.current = true;
             });
+        }
     }, []);
 
     useEffect(() => {
