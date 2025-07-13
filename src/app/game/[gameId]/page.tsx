@@ -29,8 +29,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import PlayerCard from '@/components/game/player-card';
-import ConnectFour from '@/components/game/connect-four/board';
-import TicTacToe from '@/components/game/tic-tac-toe/board';
+import ConnectFour from '@/components/game/boards/connect-four';
+import TicTacToe from '@/components/game/boards/tic-tac-toe';
 
 import { useParams } from 'next/navigation';
 import { useState, useCallback } from 'react';
