@@ -20,7 +20,7 @@ type Board = Side[][];
 interface Props {
     lobby: Lobby;
     turn: Turn | undefined;
-    endTurn: (winnerSide?: 'creator' | 'opponent') => Promise<void>;
+    endTurn: (winnerSide?: 'creator' | 'opponent' | 'tie') => Promise<void>;
 }
 
 export default function ConnectFour({ lobby, turn, endTurn }: Props) {
@@ -96,9 +96,8 @@ export default function ConnectFour({ lobby, turn, endTurn }: Props) {
                         if (hasWinner(row, col)) await endTurn(currentSide);
                         else if (isTie) {
                             if (hasWinner(row, col)) await endTurn(currentSide);
-                            else if (isTie) {
-                                // todo handle tie
-                            } else await endTurn();
+                            else if (isTie) await endTurn('tie');
+                            else await endTurn();
                         } else await endTurn();
 
                         break;

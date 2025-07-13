@@ -62,11 +62,13 @@ export default class GameDatabase {
         await updateDoc(opponentRef, { opponent, state: GameState.Active });
     }
 
-    static async updateWinner(gameId: number, winner: string) {
-        await updateDoc(doc(this.firestore, 'games', gameId.toString()), {
-            winner,
-            state: GameState.Finished,
-        });
+    static async updateWinner(gameId: number, winner?: string) {
+        const updatedData: any = {
+            state: GameState.Finished
+        }
+        if(winner) updatedData.winner = winner;
+
+        await updateDoc(doc(this.firestore, 'games', gameId.toString()), updatedData);
     }
 
     static async updateTurn(gameId: number, playerWallet: string) {

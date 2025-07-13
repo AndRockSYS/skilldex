@@ -33,6 +33,7 @@ export default function EndGameScreen({ lobby, isWinner }: Props) {
     const hasReceived = useRef(false);
 
     useEffect(() => {
+        // todo declare tie if no winner
         if (isWinner && !hasReceived.current) {
             hasReceived.current = true;
             declareWinner(lobby.id).then((data) => {

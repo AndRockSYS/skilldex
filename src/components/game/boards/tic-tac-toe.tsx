@@ -18,7 +18,7 @@ type Board = Player[][];
 interface Props {
     lobby: Lobby;
     turn: Turn | undefined;
-    endTurn: (winnerSide?: 'creator' | 'opponent') => Promise<void>;
+    endTurn: (winnerSide?: 'creator' | 'opponent' | 'tie') => Promise<void>;
 }
 
 export default function TicTacToe({ lobby, turn, endTurn }: Props) {
@@ -95,9 +95,8 @@ export default function TicTacToe({ lobby, turn, endTurn }: Props) {
 
             console.log(hasWinner());
             if (hasWinner()) await endTurn(currentSide);
-            else if (isTie) {
-                // todo handle tie
-            } else await endTurn();
+            else if (isTie) await endTurn('tie');
+            else await endTurn();
         },
         [board, isTie, publicKey, turn, currentSide]
     );

@@ -11,7 +11,7 @@ import GameDatabase from '@/lib/firebase/games';
 import { addGame } from '@/lib/redux/slice/user';
 
 import { formatWallet } from '@/utils/formatter';
-import { findSeriesWinner } from '@/utils/game-utils';
+import { findSeriesWinner, isTiedGame } from '@/utils/game-utils';
 
 import { GameState, getGameName } from '@/types/games';
 
@@ -85,7 +85,7 @@ export default function useGameProcessing(gameId: number) {
     }, [gameData, turn, turnTimeLeft]);
 
     const endTurn = useCallback(
-        async (winnerSide?: 'creator' | 'opponent') => {
+        async (winnerSide?: 'creator' | 'opponent' | 'tie') => {
             if (!gameData || !gameData.opponent || !turn) return;
 
             const turnGoesTo =
@@ -94,17 +94,8 @@ export default function useGameProcessing(gameId: number) {
             const endTimestamp = turn.turnStart + gameData.timeLimit;
             const timeLeft = Math.max(endTimestamp - Date.now(), 0);
 
-            if (winnerSide) {
-                await GameDatabase.updateScore(
-                    gameData.id,
-                    winnerSide,
-                    //@ts-expect-error
-                    gameData[winnerSide]?.score + 1
-                );
-                await refetchGameData();
-
-                await endRound(winnerSide);
-            } else if (timeLeft == 0) {
+            if (winnerSide) await endRound(winnerSide);
+            else if (timeLeft == 0) {
                 toast({
                     title: 'Turn Timed Out!',
                     description: `${turnGoesTo} wins this game.`,
@@ -119,25 +110,46 @@ export default function useGameProcessing(gameId: number) {
     );
 
     const endRound = useCallback(
-        async (winnerSide: 'creator' | 'opponent') => {
+        async (winnerSide: 'creator' | 'opponent' | 'tie') => {
             if (!gameData || !gameData.opponent) return;
 
             const updatedGameData = { ...gameData };
-            if (!updatedGameData[winnerSide]) return;
+            if (!updatedGameData.opponent) return;
 
-            updatedGameData[winnerSide].score += 1;
-            await GameDatabase.updateScore(
-                gameData.id,
-                winnerSide,
-                updatedGameData[winnerSide].score
-            );
+            if (winnerSide == 'tie') {
+                updatedGameData.creator.score += 1;
+                await GameDatabase.updateScore(
+                    gameData.id,
+                    'creator',
+                    updatedGameData.creator.score
+                );
+
+                updatedGameData.opponent.score += 1;
+                await GameDatabase.updateScore(
+                    gameData.id,
+                    'opponent',
+                    updatedGameData.opponent.score
+                );
+            } else {
+                if (!updatedGameData[winnerSide]) return;
+                updatedGameData[winnerSide].score += 1;
+                await GameDatabase.updateScore(
+                    gameData.id,
+                    winnerSide,
+                    updatedGameData[winnerSide].score
+                );
+            }
 
             await refetchGameData();
 
+            const isTie = isTiedGame(updatedGameData);
             const seriesWinner = findSeriesWinner(updatedGameData);
-            if (seriesWinner) endSeries(seriesWinner);
+
+            if (isTie && winnerSide == 'tie') endSeries('', true);
+            else if (seriesWinner) endSeries(seriesWinner);
             else {
                 // todo start a new round
+                if (winnerSide == 'tie' || !updatedGameData[winnerSide]) return;
                 await GameDatabase.updateTurn(gameData.id, updatedGameData[winnerSide].wallet);
             }
         },
@@ -145,7 +157,7 @@ export default function useGameProcessing(gameId: number) {
     );
 
     const endSeries = useCallback(
-        async (seriesWinner: string) => {
+        async (seriesWinner: string, isTie?: boolean) => {
             if (!gameData || gameData.winner || !publicKey) return;
 
             toast({
@@ -155,8 +167,10 @@ export default function useGameProcessing(gameId: number) {
                 duration: 3_000,
             });
 
-            await GameDatabase.updateWinner(gameData.id, seriesWinner);
-            await GameDatabase.clearGameData(gameData.id);
+            if (!isTie) {
+                await GameDatabase.updateWinner(gameData.id, seriesWinner);
+                await GameDatabase.clearGameData(gameData.id);
+            }
 
             if (isSpectator) router.push('/lobby');
             else {

@@ -181,6 +181,23 @@ const useProgram = () => {
         [wallet]
     );
 
+    const declareTie = useCallback(
+        (lobbyId: number) => {
+            if (!wallet?.publicKey || !program) {
+                toast({
+                    title: 'Wallet Not Connected',
+                    description: 'Please connect your wallet.',
+                    variant: 'destructive',
+                });
+                return;
+            }
+            setIsProcessing(true);
+
+            // todo
+        },
+        [wallet]
+    );
+
     const fetchPlatformData = useCallback(async (): Promise<{
         platform_signer: PublicKey;
         current_id: BN;
@@ -268,34 +285,6 @@ const useProgram = () => {
         return await completeTransaction(tx, platformSigner);
     }, [wallet]);
 
-    const closeLobbyPlatform = useCallback(
-        async (lobbyId: number, creator: PublicKey) => {
-            if (!wallet?.publicKey || !program) {
-                toast({
-                    title: 'Wallet Not Connected',
-                    description: 'Please connect your wallet.',
-                    variant: 'destructive',
-                });
-                return;
-            }
-            setIsProcessing(true);
-
-            const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
-
-            const tx = await program.methods
-                .closeLobbyAsPlatform(new BN(lobbyId))
-                .accounts({
-                    //@ts-expect-error
-                    platformSigner: platformSigner.publicKey,
-                    playerAccount: creator,
-                })
-                .transaction();
-
-            return await completeTransaction(tx, platformSigner);
-        },
-        [wallet]
-    );
-
     return {
         createLobby,
         closeLobby,
@@ -304,7 +293,7 @@ const useProgram = () => {
         updatePlatform,
         withdrawCommission,
         declareWinner,
-        closeLobbyPlatform,
+        declareTie,
         fetchPlatformData,
         isProcessing,
     };
