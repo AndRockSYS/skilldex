@@ -66,8 +66,6 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                 });
                 if (!success) return;
 
-                // todo add timer to dequeue
-
                 const data = await joinLobby(lobbyId);
                 if (!data) throw new Error('Tx was not submitted');
 

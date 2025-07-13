@@ -18,6 +18,7 @@ import {
     Announcement,
     Moderation,
 } from '@/types/admin';
+import { Lobby, QueuePlayer } from '@/types/games';
 
 if (!admin.apps.length)
     admin.initializeApp({
