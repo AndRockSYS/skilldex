@@ -253,7 +253,11 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                                     ? handleCloseLobby(lobby.id)
                                                     : handleLobbyJoin(lobby.id)
                                             }
-                                            disabled={!!lobby.opponent || !publicKey}
+                                            disabled={
+                                                !!lobby.opponent ||
+                                                !publicKey ||
+                                                lobby.expirationTime <= Date.now()
+                                            }
                                             className='whitespace-nowrap'
                                         >
                                             {publicKey?.toString() == lobby.creator.wallet &&
@@ -264,6 +268,8 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                                 </>
                                             ) : publicKey?.toString() == lobby.creator.wallet ? (
                                                 'Close Lobby'
+                                            ) : lobby.expirationTime <= Date.now() ? (
+                                                'Expired'
                                             ) : !!lobby.opponent ? (
                                                 'Full'
                                             ) : !isProcessing ? (
