@@ -83,8 +83,6 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                 await GameDatabase.addOpponent(lobbyId, opponent);
                 await GameDatabase.updateTurn(lobbyId, publicKey.toString());
 
-                // todo notify a creator
-
                 toast({
                     title: 'Tx Submitted',
                     description: 'Redirecting to the game page.',
@@ -114,7 +112,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
 
             try {
                 const data = await closeLobby(lobbyId);
-                if (!data?.error) throw new Error('Tx was not submitted');
+                if (data?.error) throw new Error(data?.error);
 
                 await GameDatabase.deleteLobby(lobbyId);
 
@@ -126,7 +124,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
             } catch (error: any) {
                 await GameDatabase.dequeue(lobbyId);
                 toast({
-                    title: 'Join Failed',
+                    title: 'Close Failed',
                     description: error.message ?? 'An error occurred while closing the game.',
                     variant: 'destructive',
                     duration: 4000,
@@ -258,7 +256,13 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                             disabled={!!lobby.opponent || !publicKey}
                                             className='whitespace-nowrap'
                                         >
-                                            {publicKey?.toString() == lobby.creator.wallet ? (
+                                            {publicKey?.toString() == lobby.creator.wallet &&
+                                            isProcessing ? (
+                                                <>
+                                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                                    Closing...
+                                                </>
+                                            ) : publicKey?.toString() == lobby.creator.wallet ? (
                                                 'Close Lobby'
                                             ) : !!lobby.opponent ? (
                                                 'Full'
