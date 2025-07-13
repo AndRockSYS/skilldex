@@ -12,6 +12,7 @@ import {
     startAfter,
     updateDoc,
     where,
+    deleteDoc
 } from 'firebase/firestore';
 import { get, getDatabase, ref, update, remove, child, set } from 'firebase/database';
 
@@ -133,6 +134,11 @@ export default class GameDatabase {
         const gameRef = ref(this.database, `/queue/${gameId}`);
         const snapshot = await get(gameRef);
         return snapshot.val() as QueuePlayer;
+    }
+
+    static async deleteLobby(gameId: number) {
+        const lobbyRef = doc(this.firestore, 'games', gameId.toString());
+        await deleteDoc(lobbyRef);
     }
 
     static async clearGameData(gameId: number) {

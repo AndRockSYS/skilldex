@@ -44,7 +44,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
 
     const { name, avatar } = useAppSelector((state) => state.userReducer);
     const { publicKey } = useWallet();
-    const { joinLobby } = useProgram();
+    const { joinLobby, closeLobby } = useProgram();
 
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -105,6 +105,37 @@ export default function LobbiesTable({ lobbies, status }: Props) {
             }
         },
         [publicKey, name, avatar, joinLobby]
+    );
+
+    const handleCloseLobby = useCallback(
+        async (lobbyId: number) => {
+            if (!publicKey) return;
+            setIsProcessing(true);
+
+            try {
+                const data = await closeLobby(lobbyId);
+                if (!data?.error) throw new Error('Tx was not submitted');
+
+                await GameDatabase.deleteLobby(lobbyId);
+
+                toast({
+                    title: 'Tx Submitted',
+                    description: 'Lobby was closed.',
+                    variant: 'default',
+                });
+            } catch (error: any) {
+                await GameDatabase.dequeue(lobbyId);
+                toast({
+                    title: 'Join Failed',
+                    description: error.message ?? 'An error occurred while closing the game.',
+                    variant: 'destructive',
+                    duration: 4000,
+                });
+            } finally {
+                setIsProcessing(false);
+            }
+        },
+        [publicKey]
     );
 
     if (!lobbies.length)
@@ -219,16 +250,16 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                         <Button
                                             variant='outline'
                                             size='sm'
-                                            onClick={() => handleLobbyJoin(lobby.id)}
-                                            disabled={
-                                                !!lobby.opponent ||
-                                                !publicKey ||
-                                                publicKey.toString() == lobby.creator.wallet
+                                            onClick={() =>
+                                                publicKey?.toString() == lobby.creator.wallet
+                                                    ? handleCloseLobby(lobby.id)
+                                                    : handleLobbyJoin(lobby.id)
                                             }
+                                            disabled={!!lobby.opponent || !publicKey}
                                             className='whitespace-nowrap'
                                         >
                                             {publicKey?.toString() == lobby.creator.wallet ? (
-                                                'Your Game'
+                                                'Close Lobby'
                                             ) : !!lobby.opponent ? (
                                                 'Full'
                                             ) : !isProcessing ? (
