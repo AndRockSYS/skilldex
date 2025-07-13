@@ -38,7 +38,38 @@ export const PDA_AFFIXES = {
 
 export const GAME_SETTINGS = {
     connectFour: {
+        initialBoard: () => {
+            return Array(GAME_SETTINGS.connectFour.rows)
+                .fill('none')
+                .map(() => Array(GAME_SETTINGS.connectFour.columns).fill('none'));
+        },
         columns: 7,
         rows: 6,
+    },
+    checkers: {
+        initialBoard: () => {
+            const initialBoard = Array(8)
+                .fill(null)
+                .map(() => Array(8).fill('none'));
+
+            for (let row = 0; row < 3; row++) {
+                for (let col = row % 2 === 0 ? 1 : 0; col < 8; col += 2) {
+                    initialBoard[row][col] = 'opponent';
+                }
+            }
+            for (let row = 5; row < 8; row++) {
+                for (let col = row % 2 === 0 ? 1 : 0; col < 8; col += 2) {
+                    initialBoard[row][col] = 'creator';
+                }
+            }
+
+            return initialBoard;
+        },
+    },
+    ticTacToe: {
+        initialBoard: () =>
+            Array(3)
+                .fill('none')
+                .map(() => Array(3).fill('none')),
     },
 };

@@ -10,10 +10,12 @@ import useNotifications from './use-notifications';
 import GameDatabase from '@/lib/firebase/games';
 import { addGame } from '@/lib/redux/slice/user';
 
+import { GAME_SETTINGS } from '@/utils/constants';
+
 import { formatWallet } from '@/utils/formatter';
 import { findSeriesWinner, isTiedGame } from '@/utils/game-utils';
 
-import { GameState, getGameName } from '@/types/games';
+import { GameState, GameType, getGameName } from '@/types/games';
 
 export default function useGameProcessing(gameId: number) {
     const { toast } = useToast();
@@ -148,8 +150,21 @@ export default function useGameProcessing(gameId: number) {
             if (isTie && winnerSide == 'tie') endSeries('', true);
             else if (seriesWinner) endSeries(seriesWinner);
             else {
-                // todo start a new round
                 if (winnerSide == 'tie' || !updatedGameData[winnerSide]) return;
+                let board: any;
+                switch (gameData.gameType) {
+                    case GameType.ConnectFour:
+                        board = GAME_SETTINGS.connectFour.initialBoard();
+                        break;
+                    case GameType.RockPaperScissors:
+                        board = GAME_SETTINGS.checkers.initialBoard();
+                        break;
+                    case GameType.TicTacToe:
+                        board = GAME_SETTINGS.ticTacToe.initialBoard();
+                        break;
+                }
+
+                await GameDatabase.uploadGameData(gameData.id, board);
                 await GameDatabase.updateTurn(gameData.id, updatedGameData[winnerSide].wallet);
             }
         },

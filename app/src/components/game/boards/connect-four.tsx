@@ -10,10 +10,6 @@ import { GAME_SETTINGS } from '@/utils/constants';
 
 import { Lobby, Turn } from '@/types/games';
 
-const initialBoard: Board = Array(GAME_SETTINGS.connectFour.rows)
-    .fill('none')
-    .map(() => Array(GAME_SETTINGS.connectFour.columns).fill('none'));
-
 type Side = 'creator' | 'opponent' | 'none';
 type Board = Side[][];
 
@@ -27,7 +23,7 @@ export default function ConnectFour({ lobby, turn, endTurn }: Props) {
     const { data: board } = useQuery({
         queryKey: ['gameData', 'connectFour'],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
-        initialData: initialBoard,
+        initialData: GAME_SETTINGS.connectFour.initialBoard,
         refetchInterval: 1_000,
     });
 

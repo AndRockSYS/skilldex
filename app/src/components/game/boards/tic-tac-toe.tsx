@@ -6,11 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import GameDatabase from '@/lib/firebase/games';
 
-import { Lobby, Turn } from '@/types/games';
+import { GAME_SETTINGS } from '@/utils/constants';
 
-const initialBoard: Board = Array(3)
-    .fill('none')
-    .map(() => Array(3).fill('none'));
+import { Lobby, Turn } from '@/types/games';
 
 type Player = 'creator' | 'opponent' | 'none';
 type Board = Player[][];
@@ -25,7 +23,7 @@ export default function TicTacToe({ lobby, turn, endTurn }: Props) {
     const { data: board } = useQuery({
         queryKey: ['gameData', 'ticTacToe'],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
-        initialData: initialBoard,
+        initialData: GAME_SETTINGS.ticTacToe.initialBoard,
         refetchInterval: 1_000,
     });
 
@@ -93,7 +91,6 @@ export default function TicTacToe({ lobby, turn, endTurn }: Props) {
 
             await GameDatabase.uploadGameData(lobby.id, newBoard);
 
-            console.log(hasWinner());
             if (hasWinner()) await endTurn(currentSide);
             else if (isTie) await endTurn('tie');
             else await endTurn();
