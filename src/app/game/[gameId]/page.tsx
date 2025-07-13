@@ -31,6 +31,7 @@ import { Label } from '@/components/ui/label';
 import PlayerCard from '@/components/game/player-card';
 import ConnectFour from '@/components/game/boards/connect-four';
 import TicTacToe from '@/components/game/boards/tic-tac-toe';
+import Checkers from '@/components/game/boards/checkers';
 
 import { useParams } from 'next/navigation';
 import { useState, useCallback } from 'react';
@@ -57,6 +58,7 @@ import {
 } from '@/types/games';
 import { getTokenName } from '@/types/utils';
 import { Player } from '@/types/user';
+
 
 export default function GameRoomPage() {
     const { gameId } = useParams();
@@ -194,7 +196,7 @@ export default function GameRoomPage() {
                     ) : gameData.gameType == GameType.TicTacToe ? (
                         <TicTacToe lobby={gameData} turn={turn} endTurn={endTurn} />
                     ) : (
-                        <></>
+                        <Checkers lobby={gameData} turn={turn} endTurn={endTurn}/>
                     )}
                     <p className='text-sm text-muted-foreground text-center'>
                         {gameData.state == GameState.Active
