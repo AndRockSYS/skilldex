@@ -46,12 +46,12 @@ export default function LobbiesTable({ lobbies, status }: Props) {
     const { publicKey } = useWallet();
     const { joinLobby, closeLobby } = useProgram();
 
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(-1);
 
     const handleLobbyJoin = useCallback(
         async (lobbyId: number) => {
             if (!publicKey) return;
-            setIsProcessing(true);
+            setIsProcessing(lobbyId);
 
             try {
                 const { success, message } = await GameDatabase.enqueue(
@@ -97,7 +97,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                     duration: 4000,
                 });
             } finally {
-                setIsProcessing(false);
+                setIsProcessing(-1);
             }
         },
         [publicKey, name, avatar, joinLobby]
@@ -106,7 +106,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
     const handleCloseLobby = useCallback(
         async (lobbyId: number) => {
             if (!publicKey) return;
-            setIsProcessing(true);
+            setIsProcessing(lobbyId);
 
             try {
                 const data = await closeLobby(lobbyId);
@@ -128,7 +128,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                     duration: 4000,
                 });
             } finally {
-                setIsProcessing(false);
+                setIsProcessing(-1);
             }
         },
         [publicKey]
@@ -259,7 +259,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                             className='whitespace-nowrap'
                                         >
                                             {publicKey?.toString() == lobby.creator.wallet &&
-                                            isProcessing ? (
+                                            isProcessing == lobby.id ? (
                                                 <>
                                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                                     Closing...
@@ -270,7 +270,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                                 'Expired'
                                             ) : !!lobby.opponent ? (
                                                 'Full'
-                                            ) : !isProcessing ? (
+                                            ) : isProcessing != lobby.id ? (
                                                 'Join & Stake'
                                             ) : (
                                                 <>
