@@ -12,20 +12,24 @@ import { Lobby, Turn } from '@/types/games';
 type Piece = 'creator' | 'creator-king' | 'opponent' | 'opponent-king' | 'none';
 type Board = Piece[][];
 
-const initialBoard: Board = Array(8)
-    .fill('none')
-    .map(() => Array(8).fill('none'));
+const createInitialBoard = () => {
+    const initialBoard: Board = Array(8)
+        .fill('none')
+        .map(() => Array(8).fill('none'));
 
-for (let row = 0; row < 3; row++) {
-    for (let col = row % 2 ? 0 : 1; col < 8; col += 2) {
-        initialBoard[row][col] = 'opponent';
+    for (let row = 0; row < 3; row++) {
+        for (let col = row % 2 ? 0 : 1; col < 8; col += 2) {
+            initialBoard[row][col] = 'opponent';
+        }
     }
-}
-for (let row = 5; row < 8; row++) {
-    for (let col = row % 2 ? 0 : 1; col < 8; col += 2) {
-        initialBoard[row][col] = 'creator';
+    for (let row = 5; row < 8; row++) {
+        for (let col = row % 2 ? 0 : 1; col < 8; col += 2) {
+            initialBoard[row][col] = 'creator';
+        }
     }
-}
+
+    return initialBoard;
+};
 
 interface Props {
     lobby: Lobby;
@@ -37,7 +41,7 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
     const { data: board } = useQuery({
         queryKey: ['gameData', 'checkers'],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
-        initialData: initialBoard,
+        initialData: createInitialBoard(),
         refetchInterval: 1_000,
     });
 
@@ -48,6 +52,8 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
     );
 
     const isPlaced = useRef(false);
+    const selectedPiece = useRef<{ row: number; col: number } | null>(null); // Moved useRef here
+
     useEffect(() => {
         if (publicKey?.toString() === turn?.playerWallet) isPlaced.current = false;
     }, [publicKey, turn]);
@@ -129,8 +135,6 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
     const handleCellClick = useCallback(
         async (row: number, col: number) => {
             if (isPlaced.current || publicKey?.toString() !== turn?.playerWallet) return;
-
-            const selectedPiece = useRef<{ row: number; col: number } | null>(null);
 
             if (board[row][col].includes(currentSide)) {
                 selectedPiece.current = { row, col };
