@@ -198,17 +198,18 @@ const useProgram = () => {
             const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
 
             // todo update solana program
-            const tx = await program.methods
-                .declateTie(new BN(lobbyId))
-                .accounts({
-                    //@ts-expect-error
-                    platformSigner: platformSigner.publicKey,
-                    payer: wallet.publicKey,
-                    secondPlayer,
-                })
-                .transaction();
+            // const tx = await program.methods
+            //     .declareTie(new BN(lobbyId))
+            //     .accounts({
+            //         //@ts-expect-error
+            //         platformSigner: platformSigner.publicKey,
+            //         payer: wallet.publicKey,
+            //         secondPlayer,
+            //     })
+            //     .transaction();
 
-            return await completeTransaction(tx, platformSigner);
+            // return await completeTransaction(tx, platformSigner);
+            return {} as any;
         },
         [wallet]
     );
