@@ -238,7 +238,7 @@ function CreateLobby() {
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {Object.values(MatchFormat).map((option) => (
+                                                {[0, 1, 2].map((option) => (
                                                     <SelectItem
                                                         key={option}
                                                         value={option.toString()}

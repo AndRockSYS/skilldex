@@ -50,7 +50,9 @@ export enum MatchFormat {
 }
 
 export const getMatchFormatName = (format: MatchFormat): string => {
-    switch (format) {
+    const formatted = Number(format);
+
+    switch (formatted) {
         case MatchFormat.Single:
             return 'Single';
         case MatchFormat.BestOf3:
@@ -58,6 +60,8 @@ export const getMatchFormatName = (format: MatchFormat): string => {
         case MatchFormat.BestOf5:
             return 'Best of 5';
     }
+
+    return 'N/A'
 };
 
 export interface Lobby {
