@@ -254,7 +254,8 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                             disabled={
                                                 !!lobby.opponent ||
                                                 !publicKey ||
-                                                lobby.expirationTime <= Date.now()
+                                                (lobby.expirationTime <= Date.now() &&
+                                                    publicKey.toString() != lobby.creator.wallet)
                                             }
                                             className='whitespace-nowrap'
                                         >

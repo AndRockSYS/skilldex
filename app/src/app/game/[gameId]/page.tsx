@@ -200,7 +200,7 @@ export default function GameRoomPage() {
                     )}
                     <p className='text-sm text-muted-foreground text-center'>
                         {gameData.state == GameState.Active
-                            ? `${turn?.playerWallet}'s turn.`
+                            ? `${turn && formatWallet(turn.playerWallet)}'s turn.`
                             : gameData.state == GameState.Open
                             ? 'Waiting for opponent...'
                             : gameData.winner &&
