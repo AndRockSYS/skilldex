@@ -6,52 +6,103 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import ShareResult from './share-result';
 import Confetti from 'react-confetti';
-import { Award, DollarSign, Frown, Home, RotateCcw } from 'lucide-react';
+import { Award, DollarSign, Frown, Handshake, Home, RotateCcw } from 'lucide-react';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useProgram from '@/hooks/use-program';
 import { useToast } from '@/hooks/use-toast';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 import { PLATFORM_COMMISSION } from '@/utils/constants';
 
 import { formatTokenAmount } from '@/utils/formatter';
 
-import { getGameName, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
+import { GameState, getGameName, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
 import { getTokenName } from '@/types/utils';
 
 interface Props {
     lobby: Lobby;
-    isWinner: boolean;
 }
 
-export default function EndGameScreen({ lobby, isWinner }: Props) {
+export default function EndGameScreen({ lobby }: Props) {
     const { toast } = useToast();
-    const [showConfetti, setShowConfetti] = useState(false);
     const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
-    const { declareWinner } = useProgram();
+    const { publicKey } = useWallet();
+    const { declareWinner, declareTie, fetchLobbyData } = useProgram();
     const hasReceived = useRef(false);
 
-    useEffect(() => {
-        // todo declare tie if no winner
-        if (isWinner && !hasReceived.current) {
-            hasReceived.current = true;
-            declareWinner(lobby.id).then((data) => {
-                if (data?.error)
-                    toast({
-                        title: 'An Error Occured',
-                        description: data.error,
-                        variant: 'destructive',
-                    });
-                else
-                    toast({
-                        title: 'Congratulations!',
-                        description: 'You have received your prize!',
-                        variant: 'default',
-                    });
+    const isWinner = useMemo(() => publicKey?.toString() == lobby.winner, [lobby]);
+    const isTie = useMemo(() => !lobby.winner && lobby.state == GameState.Finished, [lobby]);
+
+    const handleWinner = useCallback(async () => {
+        try {
+            await fetchLobbyData(lobby.id);
+            const response = await declareWinner(lobby.id);
+            if (response?.error)
+                toast({
+                    title: 'An Error Occured',
+                    description: response.error,
+                    variant: 'destructive',
+                });
+            else
+                toast({
+                    title: 'Congratulations!',
+                    description: 'You have received your prize!',
+                    variant: 'default',
+                });
+        } catch (error) {
+            toast({
+                title: 'Reward Was Received',
+                description: 'You have already collected your prize',
+                variant: 'default',
             });
         }
-    }, []);
+    }, [lobby, declareWinner]);
+
+    const handleTie = useCallback(async () => {
+        if (!lobby.opponent || !publicKey) return;
+
+        const secondPlayer =
+            publicKey.toString() == lobby.creator.wallet
+                ? lobby.opponent?.wallet
+                : lobby.creator.wallet;
+
+        try {
+            await fetchLobbyData(lobby.id);
+            const response = await declareTie(lobby.id, secondPlayer);
+            if (response?.error)
+                toast({
+                    title: 'An Error Occured',
+                    description: response.error,
+                    variant: 'destructive',
+                });
+            else
+                toast({
+                    title: 'Congratulations!',
+                    description: 'You have received your stake back',
+                    variant: 'default',
+                });
+        } catch (error) {
+            toast({
+                title: 'Stake Was Received',
+                description: 'You have already collected your stake',
+                variant: 'default',
+            });
+        }
+    }, [lobby, publicKey, declareTie]);
+
+    useEffect(() => {
+        if (hasReceived.current) return;
+
+        if (!isTie && isWinner) handleWinner();
+        else if (
+            isTie &&
+            (publicKey?.toString() == lobby.creator.wallet ||
+                publicKey?.toString() == lobby.opponent?.wallet)
+        )
+            handleTie();
+    }, [lobby, isTie, isWinner]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -59,13 +110,6 @@ export default function EndGameScreen({ lobby, isWinner }: Props) {
             const handleResize = () =>
                 setWindowSize({ width: window.innerWidth, height: window.innerHeight });
             window.addEventListener('resize', handleResize);
-
-            if (isWinner) {
-                setShowConfetti(true);
-                const timer = setTimeout(() => setShowConfetti(false), 8000);
-                return () => clearTimeout(timer);
-            }
-
             return () => window.removeEventListener('resize', handleResize);
         }
     }, [isWinner]);
@@ -75,7 +119,9 @@ export default function EndGameScreen({ lobby, isWinner }: Props) {
 
     const message = useMemo(
         () =>
-            !isWinner
+            isTie
+                ? 'The match ended in a draw. Stakes have been returned.'
+                : !isWinner
                 ? `You Lost The Match.`
                 : `You Won ${formatTokenAmount(
                       lobby.pool.initial * 2 - commission,
@@ -86,8 +132,9 @@ export default function EndGameScreen({ lobby, isWinner }: Props) {
 
     return (
         <div className='flex flex-col items-center justify-center min-h-[70vh] text-center p-4'>
-            {showConfetti && (
+            {isWinner && (
                 <Confetti
+                    className='w-full'
                     width={windowSize.width}
                     height={windowSize.height}
                     recycle={false}
@@ -96,7 +143,9 @@ export default function EndGameScreen({ lobby, isWinner }: Props) {
             )}
             <Card className='w-full max-w-lg shadow-2xl'>
                 <CardHeader>
-                    {isWinner ? (
+                    {isTie ? (
+                        <Handshake className='mx-auto h-16 w-16 sm:h-20 sm:w-20 text-muted-foreground mb-4' />
+                    ) : isWinner ? (
                         <Award className='mx-auto h-16 w-16 sm:h-20 sm:w-20 text-yellow-400 mb-4' />
                     ) : (
                         <Frown className='mx-auto h-16 w-16 sm:h-20 sm:w-20 text-destructive mb-4' />
@@ -106,7 +155,11 @@ export default function EndGameScreen({ lobby, isWinner }: Props) {
                             isWinner ? 'text-primary' : 'text-destructive'
                         }`}
                     >
-                        {isWinner ? 'Congratulations!' : 'Better Luck Next Time!'}
+                        {isTie
+                            ? `It's a tie`
+                            : isWinner
+                            ? 'Congratulations!'
+                            : 'Better Luck Next Time!'}
                     </CardTitle>
                     <CardDescription className='text-base sm:text-lg'>{message}</CardDescription>
                 </CardHeader>

@@ -15,7 +15,7 @@ export default function WinPage() {
     const { gameId } = useParams();
     const { toast } = useToast();
 
-    const { publicKey } = useWallet();
+    const { connected } = useWallet();
 
     const {
         data: lobbyData,
@@ -35,7 +35,7 @@ export default function WinPage() {
         enabled: !!gameId && !Number.isNaN(Number(gameId)),
     });
 
-    if (isFetching || !lobbyData || !publicKey)
+    if (isFetching || !lobbyData || !connected)
         return (
             <div className='flex justify-center items-center h-screen'>
                 <p>Calculating your winnings...</p>
@@ -56,5 +56,5 @@ export default function WinPage() {
             </div>
         );
 
-    return <EndGameScreen lobby={lobbyData} isWinner={lobbyData.winner == publicKey.toString()} />;
+    return <EndGameScreen lobby={lobbyData} />;
 }

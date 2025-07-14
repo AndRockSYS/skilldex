@@ -4,7 +4,7 @@ import { useToast } from './use-toast';
 
 import { getPlatform } from '@/actions';
 
-import { getPlatformPubKey, initProgram, parseEventLogs } from '@/lib/solana';
+import { getLobbyAddress, getPlatformPubKey, initProgram, parseEventLogs } from '@/lib/solana';
 import { BorshCoder, web3, BN } from '@coral-xyz/anchor';
 
 import { IDL } from '@/data/program-idl';
@@ -18,6 +18,8 @@ import { GameType } from '@/types/games';
 const useProgram = () => {
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const coder = useMemo(() => new BorshCoder(IDL as any), []);
 
     const wallet = useAnchorWallet();
     const program = useMemo(() => (wallet ? initProgram(wallet) : undefined), [wallet]);
@@ -182,7 +184,7 @@ const useProgram = () => {
     );
 
     const declareTie = useCallback(
-        (lobbyId: number) => {
+        async (lobbyId: number, secondPlayer: string) => {
             if (!wallet?.publicKey || !program) {
                 toast({
                     title: 'Wallet Not Connected',
@@ -193,7 +195,20 @@ const useProgram = () => {
             }
             setIsProcessing(true);
 
-            // todo
+            const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
+
+            // todo update solana program
+            const tx = await program.methods
+                .declateTie(new BN(lobbyId))
+                .accounts({
+                    //@ts-expect-error
+                    platformSigner: platformSigner.publicKey,
+                    payer: wallet.publicKey,
+                    secondPlayer
+                })
+                .transaction();
+
+            return await completeTransaction(tx, platformSigner);
         },
         [wallet]
     );
@@ -203,13 +218,23 @@ const useProgram = () => {
         current_id: BN;
         balance: BN;
     }> => {
-        const coder = new BorshCoder(IDL as any);
-
         const accountInfo = await connection.getAccountInfo(getPlatformPubKey());
         if (!accountInfo) throw new Error('Account not found');
 
         return coder.accounts.decode('Platform', accountInfo.data);
-    }, [wallet]);
+    }, [connection]);
+
+    const fetchLobbyData = useCallback(
+        async (lobbyId: number): Promise<{}> => {
+            const lobbyAddress = getLobbyAddress(lobbyId);
+            const accountInfo = await connection.getAccountInfo(lobbyAddress);
+
+            if (!accountInfo) throw new Error('Account not found');
+            console.log(coder.accounts.decode('Lobby', accountInfo.data));
+            return coder.accounts.decode('Lobby', accountInfo.data);
+        },
+        [connection]
+    );
 
     // * Admin actions only
 
@@ -295,6 +320,7 @@ const useProgram = () => {
         declareWinner,
         declareTie,
         fetchPlatformData,
+        fetchLobbyData,
         isProcessing,
     };
 };
