@@ -1,7 +1,6 @@
 'use client';
 
 import { Circle, Crown } from 'lucide-react';
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useQuery } from '@tanstack/react-query';
@@ -9,6 +8,8 @@ import { useQuery } from '@tanstack/react-query';
 import GameDatabase from '@/lib/firebase/games';
 
 import { GAME_SETTINGS } from '@/utils/constants';
+
+import { cn } from '@/lib/utils';
 
 import { Lobby, Turn } from '@/types/games';
 
@@ -28,7 +29,7 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
         [lobby, turn]
     );
 
-    const { data: board } = useQuery({
+    const { data: board, refetch } = useQuery({
         queryKey: ['gameData', 'checkers', lobby.id],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
         initialData: GAME_SETTINGS.checkers.initialBoard(),
@@ -46,11 +47,23 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
     }, [publicKey, turn]);
 
     const isValidMove = useCallback(
-        (fromRow: number, fromCol: number, toRow: number, toCol: number): boolean => {
-            if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7 || board[toRow][toCol] !== 'none')
+        (
+            fromRow: number,
+            fromCol: number,
+            toRow: number,
+            toCol: number,
+            customBoard: Board = board
+        ): boolean => {
+            if (
+                toRow < 0 ||
+                toRow > 7 ||
+                toCol < 0 ||
+                toCol > 7 ||
+                customBoard[toRow][toCol] !== 'none'
+            )
                 return false;
 
-            const piece = board[fromRow][fromCol];
+            const piece = customBoard[fromRow][fromCol];
             if (!piece.includes(currentSide)) return false;
 
             const rowDiff = toRow - fromRow;
@@ -72,7 +85,7 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
             if (isJumpMove) {
                 const midRow = fromRow + rowDiff / 2;
                 const midCol = fromCol + colDiff / 2;
-                const midPiece = board[midRow][midCol];
+                const midPiece = customBoard[midRow][midCol];
                 return midPiece !== 'none' && !midPiece.includes(currentSide);
             }
 
@@ -82,15 +95,23 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
     );
 
     const getValidMoves = useCallback(
-        (fromRow: number, fromCol: number) => {
+        (fromRow: number, fromCol: number, customBoard: Board = board) => {
             const targets: { row: number; col: number }[] = [];
 
             for (let dr of [-1, 1]) {
                 for (let dc of [-1, 1]) {
-                    if (isValidMove(fromRow, fromCol, fromRow + dr, fromCol + dc)) {
+                    if (isValidMove(fromRow, fromCol, fromRow + dr, fromCol + dc, customBoard)) {
                         targets.push({ row: fromRow + dr, col: fromCol + dc });
                     }
-                    if (isValidMove(fromRow, fromCol, fromRow + 2 * dr, fromCol + 2 * dc)) {
+                    if (
+                        isValidMove(
+                            fromRow,
+                            fromCol,
+                            fromRow + 2 * dr,
+                            fromCol + 2 * dc,
+                            customBoard
+                        )
+                    ) {
                         targets.push({ row: fromRow + 2 * dr, col: fromCol + 2 * dc });
                     }
                 }
@@ -98,14 +119,42 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
 
             return targets;
         },
-        [isValidMove]
+        [isValidMove, board]
     );
 
-    const hasWinner = useCallback(() => {
-        const creatorPieces = board.flat().filter((p) => p.includes('creator')).length;
-        const opponentPieces = board.flat().filter((p) => p.includes('opponent')).length;
-        return creatorPieces === 0 || opponentPieces === 0;
-    }, [board]);
+    const getAllJumpMoves = useCallback(
+        (customBoard: Board = board) => {
+            const jumps: { row: number; col: number; targets: { row: number; col: number }[] }[] =
+                [];
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (customBoard[row][col].includes(currentSide)) {
+                        const moves = getValidMoves(row, col, customBoard).filter(
+                            (m) => Math.abs(m.row - row) === 2
+                        );
+                        if (moves.length > 0) {
+                            jumps.push({ row, col, targets: moves });
+                        }
+                    }
+                }
+            }
+
+            return jumps;
+        },
+        [getValidMoves, board, currentSide]
+    );
+
+    const getWinner = useCallback((board: Board): 'creator' | 'opponent' | null => {
+        const flatBoard = board.flat();
+        const creatorPieces = flatBoard.filter((p) => p.includes('creator')).length;
+        const opponentPieces = flatBoard.filter((p) => p.includes('opponent')).length;
+
+        if (creatorPieces === 0) return 'opponent';
+        if (opponentPieces === 0) return 'creator';
+
+        return null;
+    }, []);
 
     const isTie = useMemo(() => {
         for (let row = 0; row < 8; row++) {
@@ -124,16 +173,27 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
         async (row: number, col: number) => {
             if (isPlaced.current || publicKey?.toString() !== turn?.playerWallet) return;
 
+            const allJumps = getAllJumpMoves();
+
             if (board[row][col].includes(currentSide)) {
+                const jumpSource = allJumps.find((j) => j.row === row && j.col === col);
+
+                if (allJumps.length > 0 && !jumpSource) return;
+
                 setSelectedPiece({ row, col });
-                setValidTargets(getValidMoves(row, col));
+                setValidTargets(jumpSource ? jumpSource.targets : getValidMoves(row, col));
                 return;
             }
 
             if (selectedPiece && isValidMove(selectedPiece.row, selectedPiece.col, row, col)) {
+                const fromRow = selectedPiece.row;
+                const fromCol = selectedPiece.col;
+
+                if (allJumps.length > 0 && Math.abs(row - fromRow) !== 2) return;
+
                 isPlaced.current = true;
+
                 const newBoard: Board = board.map((r) => [...r]);
-                const { row: fromRow, col: fromCol } = selectedPiece;
                 const piece = newBoard[fromRow][fromCol];
 
                 newBoard[row][col] = piece;
@@ -154,23 +214,27 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
 
                 await GameDatabase.uploadGameData(lobby.id, newBoard);
 
-                const moreJumps = getValidMoves(row, col).some(
-                    (move) => Math.abs(move.row - row) === 2
+                const moreJumps = getValidMoves(row, col, newBoard).filter(
+                    (m) => Math.abs(m.row - row) === 2
                 );
 
-                if (hasWinner()) {
+                const { data } = await refetch();
+                const winnerSide = getWinner(data as any);
+
+                if (winnerSide) {
                     await endTurn(currentSide);
                 } else if (isTie) {
                     await endTurn('tie');
-                } else if (Math.abs(row - fromRow) === 2 && moreJumps) {
+                } else if (Math.abs(row - fromRow) === 2 && moreJumps.length > 0) {
                     isPlaced.current = false;
                     setSelectedPiece({ row, col });
-                    setValidTargets(getValidMoves(row, col));
+                    setValidTargets(moreJumps);
                     return;
                 } else {
                     await endTurn();
                 }
 
+                await refetch();
                 setSelectedPiece(null);
                 setValidTargets([]);
             }
@@ -183,16 +247,23 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
             selectedPiece,
             isValidMove,
             getValidMoves,
-            hasWinner,
+            getAllJumpMoves,
+            getWinner,
             isTie,
             endTurn,
             lobby.id,
+            lobby.winner,
         ]
     );
 
     return (
         <div className='flex flex-col items-center p-4'>
-            <div className='grid gap-1 bg-gray-800 p-4 rounded-lg'>
+            <div
+                className={cn(
+                    'grid gap-1 bg-gray-800 p-4 rounded-lg',
+                    currentSide == 'opponent' ? 'rotate-180' : ''
+                )}
+            >
                 {board.map((row, rowIndex) => (
                     <div key={rowIndex} className='flex gap-1'>
                         {row.map((cell, colIndex) => {
@@ -232,10 +303,20 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
                                             }`}
                                     >
                                         {(cell === 'creator' || cell === 'opponent') && (
-                                            <Circle className='w-6 h-6 text-white fill-current' />
+                                            <Circle
+                                                className={cn(
+                                                    'w-6 h-6 text-white fill-current',
+                                                    currentSide == 'opponent' ? 'rotate-180' : ''
+                                                )}
+                                            />
                                         )}
                                         {(cell === 'creator-king' || cell === 'opponent-king') && (
-                                            <Crown className='w-6 h-6 text-yellow-400' />
+                                            <Crown
+                                                className={cn(
+                                                    'w-6 h-6 text-yellow-400',
+                                                    currentSide == 'opponent' ? 'rotate-180' : ''
+                                                )}
+                                            />
                                         )}
                                     </div>
                                 </button>
