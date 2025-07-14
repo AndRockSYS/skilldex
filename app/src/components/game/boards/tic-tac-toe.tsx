@@ -21,7 +21,7 @@ interface Props {
 
 export default function TicTacToe({ lobby, turn, endTurn }: Props) {
     const { data: board } = useQuery({
-        queryKey: ['gameData', 'ticTacToe'],
+        queryKey: ['gameData', 'ticTacToe', lobby.id],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
         initialData: GAME_SETTINGS.ticTacToe.initialBoard,
         refetchInterval: 1_000,
@@ -38,15 +38,15 @@ export default function TicTacToe({ lobby, turn, endTurn }: Props) {
         if (publicKey?.toString() == turn?.playerWallet) isPlaced.current = false;
     }, [publicKey, turn]);
 
-    const hasWinner = useCallback(() => {
+    const hasWinner = useCallback((board: Board) => {
         for (let row = 0; row < 3; row++) {
             if (
                 board[row][0] == currentSide &&
                 board[row][1] == currentSide &&
                 board[row][2] == currentSide
-            ) {
+            ) 
                 return true;
-            }
+            
         }
         for (let col = 0; col < 3; col++) {
             if (
@@ -72,30 +72,29 @@ export default function TicTacToe({ lobby, turn, endTurn }: Props) {
             return true;
         }
         return false;
-    }, [board, currentSide]);
-
-    const isTie = useMemo(() => board.every((row) => row.every((cell) => cell != 'none')), [board]);
+    }, [currentSide]);
 
     const handleCellClick = useCallback(
         async (row: number, col: number) => {
-            if (
-                isPlaced.current ||
-                publicKey?.toString() != turn?.playerWallet ||
-                board[row][col] != 'none'
-            )
-                return;
+            // if (
+            //     isPlaced.current ||
+            //     publicKey?.toString() != turn?.playerWallet ||
+            //     board[row][col] != 'none'
+            // )
+            //     return;
             isPlaced.current = true;
 
             const newBoard: Board = board.map((r) => [...r]);
             newBoard[row][col] = currentSide;
+            const isTie = newBoard.every((row) => row.every((cell) => cell != 'none'));
 
             await GameDatabase.uploadGameData(lobby.id, newBoard);
 
-            if (hasWinner()) await endTurn(currentSide);
+            if (hasWinner(newBoard)) await endTurn(currentSide);
             else if (isTie) await endTurn('tie');
             else await endTurn();
         },
-        [board, isTie, publicKey, turn, currentSide]
+        [board, publicKey, turn, currentSide]
     );
 
     return (

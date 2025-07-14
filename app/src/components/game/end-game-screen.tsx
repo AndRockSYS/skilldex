@@ -94,6 +94,7 @@ export default function EndGameScreen({ lobby }: Props) {
 
     useEffect(() => {
         if (hasReceived.current) return;
+        hasReceived.current = true;
 
         if (!isTie && isWinner) handleWinner();
         else if (

@@ -147,25 +147,18 @@ export default function useGameProcessing(gameId: number) {
             const isTie = isTiedGame(updatedGameData);
             const seriesWinner = findSeriesWinner(updatedGameData);
 
-            if (isTie && winnerSide == 'tie') endSeries('', true);
+            if (isTie) endSeries('', true);
             else if (seriesWinner) endSeries(seriesWinner);
-            else {
-                if (winnerSide == 'tie' || !updatedGameData[winnerSide]) return;
-                let board: any;
-                switch (gameData.gameType) {
-                    case GameType.ConnectFour:
-                        board = GAME_SETTINGS.connectFour.initialBoard();
-                        break;
-                    case GameType.RockPaperScissors:
-                        board = GAME_SETTINGS.checkers.initialBoard();
-                        break;
-                    case GameType.TicTacToe:
-                        board = GAME_SETTINGS.ticTacToe.initialBoard();
-                        break;
-                }
+            else if (winnerSide == 'tie') {
+                const board =
+                    gameData.gameType == GameType.ConnectFour
+                        ? GAME_SETTINGS.connectFour.initialBoard()
+                        : gameData.gameType == GameType.RockPaperScissors
+                        ? GAME_SETTINGS.checkers.initialBoard()
+                        : GAME_SETTINGS.ticTacToe.initialBoard();
 
                 await GameDatabase.uploadGameData(gameData.id, board);
-                await GameDatabase.updateTurn(gameData.id, updatedGameData[winnerSide].wallet);
+                await GameDatabase.updateTurn(gameData.id, updatedGameData.creator.wallet);
             }
         },
         [gameData]
@@ -177,15 +170,13 @@ export default function useGameProcessing(gameId: number) {
 
             toast({
                 title: 'Match Over!',
-                description: `${formatWallet(seriesWinner)} wins the series!`,
+                description: isTie ? 'Tie!' : `${formatWallet(seriesWinner)} wins the series!`,
                 variant: 'default',
                 duration: 3_000,
             });
 
-            if (!isTie) {
-                await GameDatabase.updateWinner(gameData.id, seriesWinner);
-                await GameDatabase.clearGameData(gameData.id);
-            }
+            await GameDatabase.updateWinner(gameData.id, seriesWinner);
+            await GameDatabase.clearGameData(gameData.id);
 
             if (isSpectator) router.push('/lobby');
             else {

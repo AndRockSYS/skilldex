@@ -204,7 +204,7 @@ const useProgram = () => {
                     //@ts-expect-error
                     platformSigner: platformSigner.publicKey,
                     payer: wallet.publicKey,
-                    secondPlayer
+                    secondPlayer,
                 })
                 .transaction();
 
@@ -225,12 +225,22 @@ const useProgram = () => {
     }, [connection]);
 
     const fetchLobbyData = useCallback(
-        async (lobbyId: number): Promise<{}> => {
+        async (
+            lobbyId: number
+        ): Promise<{
+            lobby_id: BN;
+            game_type: any;
+            game_state: any;
+            players: PublicKey[];
+            pool: BN;
+            timestamp: BN;
+            expire_time: BN;
+            bump: number;
+        }> => {
             const lobbyAddress = getLobbyAddress(lobbyId);
             const accountInfo = await connection.getAccountInfo(lobbyAddress);
 
             if (!accountInfo) throw new Error('Account not found');
-            console.log(coder.accounts.decode('Lobby', accountInfo.data));
             return coder.accounts.decode('Lobby', accountInfo.data);
         },
         [connection]

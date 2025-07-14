@@ -21,7 +21,7 @@ interface Props {
 
 export default function ConnectFour({ lobby, turn, endTurn }: Props) {
     const { data: board } = useQuery({
-        queryKey: ['gameData', 'connectFour'],
+        queryKey: ['gameData', 'connectFour', lobby.id],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
         initialData: GAME_SETTINGS.connectFour.initialBoard,
         refetchInterval: 1_000,
@@ -39,7 +39,7 @@ export default function ConnectFour({ lobby, turn, endTurn }: Props) {
     }, [publicKey, turn]);
 
     const hasWinner = useCallback(
-        (row: number, col: number) => {
+        (board: Board, row: number, col: number) => {
             const directions = [
                 [0, 1],
                 [1, 0],
@@ -70,10 +70,8 @@ export default function ConnectFour({ lobby, turn, endTurn }: Props) {
 
             return false;
         },
-        [board, currentSide]
+        [currentSide]
     );
-
-    const isTie = useMemo(() => board.every((row) => row.every((cell) => cell != 'none')), [board]);
 
     const handleColumnClick = useCallback(
         async (col: number) => {
@@ -88,20 +86,18 @@ export default function ConnectFour({ lobby, turn, endTurn }: Props) {
                         newBoard[row][col] = currentSide;
 
                         await GameDatabase.uploadGameData(lobby.id, newBoard);
+                        const isTie = newBoard.every((row) => row.every((cell) => cell != 'none'));
 
-                        if (hasWinner(row, col)) await endTurn(currentSide);
-                        else if (isTie) {
-                            if (hasWinner(row, col)) await endTurn(currentSide);
-                            else if (isTie) await endTurn('tie');
-                            else await endTurn();
-                        } else await endTurn();
+                        if (hasWinner(newBoard, row, col)) await endTurn(currentSide);
+                        else if (isTie) await endTurn('tie');
+                        else await endTurn();
 
                         break;
                     }
                 }
             }
         },
-        [board, currentSide, publicKey, turn, isTie]
+        [board, currentSide, publicKey, turn]
     );
 
     return (

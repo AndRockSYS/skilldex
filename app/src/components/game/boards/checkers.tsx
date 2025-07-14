@@ -156,7 +156,7 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
         return null;
     }, []);
 
-    const isTie = useMemo(() => {
+    const isTie = useCallback((board: Board) => {
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 if (board[row][col].includes(currentSide)) {
@@ -167,7 +167,7 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
             }
         }
         return true;
-    }, [board, currentSide, getValidMoves]);
+    }, [currentSide, getValidMoves]);
 
     const handleCellClick = useCallback(
         async (row: number, col: number) => {
@@ -218,12 +218,11 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
                     (m) => Math.abs(m.row - row) === 2
                 );
 
-                const { data } = await refetch();
-                const winnerSide = getWinner(data as any);
+                const winnerSide = getWinner(newBoard);
 
                 if (winnerSide) {
                     await endTurn(currentSide);
-                } else if (isTie) {
+                } else if (isTie(newBoard)) {
                     await endTurn('tie');
                 } else if (Math.abs(row - fromRow) === 2 && moreJumps.length > 0) {
                     isPlaced.current = false;
