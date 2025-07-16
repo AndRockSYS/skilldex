@@ -263,10 +263,10 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                             isProcessing == lobby.id ? (
                                                 <>
                                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                                    Closing...
+                                                    Cancelling...
                                                 </>
                                             ) : publicKey?.toString() == lobby.creator.wallet ? (
-                                                'Close Lobby'
+                                                'Cancel Challenge'
                                             ) : lobby.expirationTime <= Date.now() ? (
                                                 'Expired'
                                             ) : !!lobby.opponent ? (

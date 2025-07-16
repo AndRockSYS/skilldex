@@ -29,7 +29,7 @@ export default function SuccessCreation({ lobby }: { lobby: Lobby }) {
     const router = useRouter();
 
     const lobbyLink = useMemo(
-        () => `${process.env.BASE_URL}/lobby?lobbyId=${lobby.id}`,
+        () => `${process.env.NEXT_PUBLIC_BASE_URL}/lobby?lobbyId=${lobby.id}`,
         [lobby.id]
     );
 
