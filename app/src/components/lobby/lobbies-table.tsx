@@ -281,8 +281,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                             )}
                                         </Button>
                                     )}
-                                    {(status == GameState.Active ||
-                                        status == GameState.Finished) && (
+                                    {status == GameState.Active && (
                                         <Button
                                             variant='outline'
                                             size='sm'
@@ -290,16 +289,27 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                             className='whitespace-nowrap'
                                         >
                                             <Link href={`/game/${lobby.id}`}>
-                                                {status == GameState.Active ? (
-                                                    <Eye className='mr-2 h-4 w-4' />
-                                                ) : (
-                                                    <History className='mr-2 h-4 w-4' />
-                                                )}
-                                                {status == GameState.Active
-                                                    ? lobby.opponent
-                                                        ? 'View'
-                                                        : 'Wait Opponent'
-                                                    : 'Details'}
+                                                <Eye className='mr-2 h-4 w-4' />
+                                                {!lobby.opponent
+                                                    ? 'Wait Opponent'
+                                                    : publicKey?.toString() ==
+                                                          lobby.creator.wallet ||
+                                                      publicKey?.toString() == lobby.opponent.wallet
+                                                    ? 'Play'
+                                                    : 'View'}
+                                            </Link>
+                                        </Button>
+                                    )}
+                                    {status == GameState.Finished && (
+                                        <Button
+                                            variant='outline'
+                                            size='sm'
+                                            asChild
+                                            className='whitespace-nowrap'
+                                        >
+                                            <Link href={`/game/${lobby.id}`}>
+                                                <History className='mr-2 h-4 w-4' />
+                                                Details
                                             </Link>
                                         </Button>
                                     )}
