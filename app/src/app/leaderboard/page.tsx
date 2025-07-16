@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import AppDatabase from '@/lib/firebase/client';
 
-export default async function LeaderboardPage() {
+export default function LeaderboardPage() {
     const { data: users, error } = useQuery({
         queryKey: ['leaderboard'],
         queryFn: async () => await AppDatabase.fetchLeaderboard(),
