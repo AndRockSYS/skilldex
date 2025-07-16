@@ -22,10 +22,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LobbiesTable from '@/components/lobby/lobbies-table';
 import Announcements from '@/components/lobby/announcements';
+import UserLobbies from '@/components/lobby/user-lobbies';
 
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 import GameDatabase from '@/lib/firebase/games';
 
@@ -33,8 +35,10 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { games } from '@/content/games';
 
 import { GameState, GameType, Lobby } from '@/types/games';
+import { cn } from '@/lib/utils';
 
 export default function LobbyPage() {
+    const { publicKey } = useWallet();
     const { lobbyId } = useParams();
 
     const [state, setState] = useState<GameState>(GameState.Open);
@@ -209,19 +213,23 @@ export default function LobbyPage() {
                 onValueChange={(value) => setState(Number(value) as GameState)}
                 className='w-full'
             >
-                <TabsList className='grid w-full grid-cols-3'>
-                    <TabsTrigger value={GameState.Open.toString()}>Open Challenges</TabsTrigger>
-                    <TabsTrigger value={GameState.Active.toString()}>Active Matches</TabsTrigger>
-                    <TabsTrigger value={GameState.Finished.toString()}>Match History</TabsTrigger>
+                <TabsList className={cn('grid w-full', publicKey ? 'grid-cols-4' : 'grid-cols-3')}>
+                    <TabsTrigger value={GameState.Open.toString()}>Open</TabsTrigger>
+                    <TabsTrigger value={GameState.Active.toString()}>Active</TabsTrigger>
+                    <TabsTrigger value={GameState.Finished.toString()}>History</TabsTrigger>
+                    {publicKey && <TabsTrigger value={publicKey.toString()}>My Games</TabsTrigger>}
                 </TabsList>
                 {[GameState.Open, GameState.Active, GameState.Finished].map((state) => (
                     <TabsContent key={state} value={state.toString()} className='mt-4'>
                         <Card>
                             <CardContent className='p-0'>
                                 <LobbiesTable
-                                    lobbies={filteredLobbies.filter(
-                                        (lobby) => lobby.state == state
-                                    )}
+                                    lobbies={filteredLobbies.filter((lobby) => {
+                                        return state == GameState.Open
+                                            ? lobby.state == state &&
+                                                  lobby.expirationTime < Date.now()
+                                            : lobby.state == state;
+                                    })}
                                     status={state}
                                 />
                             </CardContent>
@@ -248,6 +256,7 @@ export default function LobbyPage() {
                         </Card>
                     </TabsContent>
                 ))}
+                <UserLobbies />
             </Tabs>
         </div>
     );

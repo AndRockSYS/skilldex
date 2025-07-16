@@ -12,7 +12,8 @@ import {
     startAfter,
     updateDoc,
     where,
-    deleteDoc
+    deleteDoc,
+    or,
 } from 'firebase/firestore';
 import { get, getDatabase, ref, update, remove, child, set } from 'firebase/database';
 
@@ -40,12 +41,27 @@ export default class GameDatabase {
         return snapshot.data() as Lobby;
     }
 
+    static async fetchUserLobbies(wallet: string, lastCreatedAt?: number): Promise<Lobby[]> {
+        let lobbiesQuery = query(
+            collection(this.firestore, 'games'),
+            or(where('creator.wallet', '==', wallet), where('opponent.wallet', '==', wallet)),
+            orderBy('createdAt', 'desc'),
+            limit(5)
+        );
+
+        if (lastCreatedAt) lobbiesQuery = query(lobbiesQuery, startAfter(lastCreatedAt));
+
+        const snapshot = await getDocs(lobbiesQuery);
+        const lobbies = snapshot.docs.map((snap) => snap.data() as Lobby);
+        return lobbies;
+    }
+
     static async fetchLobbies(state: GameState, lastCreatedAt?: number): Promise<Lobby[]> {
         let lobbiesQuery = query(
             collection(this.firestore, 'games'),
             where('state', '==', state),
             orderBy('createdAt', 'desc'),
-            limit(5)
+            limit(10)
         );
 
         if (lastCreatedAt) lobbiesQuery = query(lobbiesQuery, startAfter(lastCreatedAt));
@@ -64,9 +80,9 @@ export default class GameDatabase {
 
     static async updateWinner(gameId: number, winner?: string) {
         const updatedData: any = {
-            state: GameState.Finished
-        }
-        if(winner) updatedData.winner = winner;
+            state: GameState.Finished,
+        };
+        if (winner) updatedData.winner = winner;
 
         await updateDoc(doc(this.firestore, 'games', gameId.toString()), updatedData);
     }
