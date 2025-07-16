@@ -59,7 +59,6 @@ import {
 import { getTokenName } from '@/types/utils';
 import { Player } from '@/types/user';
 
-
 export default function GameRoomPage() {
     const { gameId } = useParams();
 
@@ -192,11 +191,26 @@ export default function GameRoomPage() {
                     {gameData.state == GameState.Finished ? (
                         <></>
                     ) : gameData.gameType == GameType.ConnectFour ? (
-                        <ConnectFour lobby={gameData} turn={turn} endTurn={endTurn} />
+                        <ConnectFour
+                            lobby={gameData}
+                            isSpectator={isSpectator}
+                            turn={turn}
+                            endTurn={endTurn}
+                        />
                     ) : gameData.gameType == GameType.TicTacToe ? (
-                        <TicTacToe lobby={gameData} turn={turn} endTurn={endTurn} />
+                        <TicTacToe
+                            lobby={gameData}
+                            isSpectator={isSpectator}
+                            turn={turn}
+                            endTurn={endTurn}
+                        />
                     ) : (
-                        <Checkers lobby={gameData} turn={turn} endTurn={endTurn}/>
+                        <Checkers
+                            lobby={gameData}
+                            isSpectator={isSpectator}
+                            turn={turn}
+                            endTurn={endTurn}
+                        />
                     )}
                     <p className='text-sm text-muted-foreground text-center'>
                         {gameData.state == GameState.Active

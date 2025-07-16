@@ -16,10 +16,11 @@ type Board = Player[][];
 interface Props {
     lobby: Lobby;
     turn: Turn | undefined;
+    isSpectator: boolean;
     endTurn: (winnerSide?: 'creator' | 'opponent' | 'tie') => Promise<void>;
 }
 
-export default function TicTacToe({ lobby, turn, endTurn }: Props) {
+export default function TicTacToe({ lobby, isSpectator, turn, endTurn }: Props) {
     const { data: board } = useQuery({
         queryKey: ['gameData', 'ticTacToe', lobby.id],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
@@ -38,50 +39,52 @@ export default function TicTacToe({ lobby, turn, endTurn }: Props) {
         if (publicKey?.toString() == turn?.playerWallet) isPlaced.current = false;
     }, [publicKey, turn]);
 
-    const hasWinner = useCallback((board: Board) => {
-        for (let row = 0; row < 3; row++) {
+    const hasWinner = useCallback(
+        (board: Board) => {
+            for (let row = 0; row < 3; row++) {
+                if (
+                    board[row][0] == currentSide &&
+                    board[row][1] == currentSide &&
+                    board[row][2] == currentSide
+                )
+                    return true;
+            }
+            for (let col = 0; col < 3; col++) {
+                if (
+                    board[0][col] == currentSide &&
+                    board[1][col] == currentSide &&
+                    board[2][col] == currentSide
+                ) {
+                    return true;
+                }
+            }
             if (
-                board[row][0] == currentSide &&
-                board[row][1] == currentSide &&
-                board[row][2] == currentSide
-            ) 
-                return true;
-            
-        }
-        for (let col = 0; col < 3; col++) {
-            if (
-                board[0][col] == currentSide &&
-                board[1][col] == currentSide &&
-                board[2][col] == currentSide
+                board[0][0] == currentSide &&
+                board[1][1] == currentSide &&
+                board[2][2] == currentSide
             ) {
                 return true;
             }
-        }
-        if (
-            board[0][0] == currentSide &&
-            board[1][1] == currentSide &&
-            board[2][2] == currentSide
-        ) {
-            return true;
-        }
-        if (
-            board[0][2] == currentSide &&
-            board[1][1] == currentSide &&
-            board[2][0] == currentSide
-        ) {
-            return true;
-        }
-        return false;
-    }, [currentSide]);
+            if (
+                board[0][2] == currentSide &&
+                board[1][1] == currentSide &&
+                board[2][0] == currentSide
+            ) {
+                return true;
+            }
+            return false;
+        },
+        [currentSide]
+    );
 
     const handleCellClick = useCallback(
         async (row: number, col: number) => {
-            // if (
-            //     isPlaced.current ||
-            //     publicKey?.toString() != turn?.playerWallet ||
-            //     board[row][col] != 'none'
-            // )
-            //     return;
+            if (
+                isPlaced.current ||
+                publicKey?.toString() != turn?.playerWallet ||
+                board[row][col] != 'none'
+            )
+                return;
             isPlaced.current = true;
 
             const newBoard: Board = board.map((r) => [...r]);
@@ -107,6 +110,7 @@ export default function TicTacToe({ lobby, turn, endTurn }: Props) {
                                 key={colIndex}
                                 onClick={() => handleCellClick(rowIndex, colIndex)}
                                 className='w-16 h-16 bg-white flex items-center justify-center text-2xl font-bold'
+                                disabled={isSpectator}
                             >
                                 <span
                                     className={`${

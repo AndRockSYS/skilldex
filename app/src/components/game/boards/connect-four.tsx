@@ -16,10 +16,11 @@ type Board = Side[][];
 interface Props {
     lobby: Lobby;
     turn: Turn | undefined;
+    isSpectator: boolean;
     endTurn: (winnerSide?: 'creator' | 'opponent' | 'tie') => Promise<void>;
 }
 
-export default function ConnectFour({ lobby, turn, endTurn }: Props) {
+export default function ConnectFour({ lobby, isSpectator, turn, endTurn }: Props) {
     const { data: board } = useQuery({
         queryKey: ['gameData', 'connectFour', lobby.id],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
@@ -110,7 +111,7 @@ export default function ConnectFour({ lobby, turn, endTurn }: Props) {
                                 key={colIndex}
                                 onClick={() => handleColumnClick(colIndex)}
                                 className=' rounded-full bg-white flex items-center justify-center'
-                                disabled={!!lobby.winner}
+                                disabled={isSpectator}
                             >
                                 <div
                                     className={`w-10 h-10 rounded-full ${

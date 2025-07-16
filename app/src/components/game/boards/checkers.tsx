@@ -19,10 +19,11 @@ type Board = Piece[][];
 interface Props {
     lobby: Lobby;
     turn: Turn | undefined;
+    isSpectator: boolean;
     endTurn: (winnerSide?: 'creator' | 'opponent' | 'tie') => Promise<void>;
 }
 
-export default function Checkers({ lobby, turn, endTurn }: Props) {
+export default function Checkers({ lobby, isSpectator, turn, endTurn }: Props) {
     const { publicKey } = useWallet();
     const currentSide = useMemo(
         () => (lobby.creator.wallet === turn?.playerWallet ? 'creator' : 'opponent'),
@@ -156,18 +157,21 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
         return null;
     }, []);
 
-    const isTie = useCallback((board: Board) => {
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 8; col++) {
-                if (board[row][col].includes(currentSide)) {
-                    if (getValidMoves(row, col).length > 0) {
-                        return false;
+    const isTie = useCallback(
+        (board: Board) => {
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (board[row][col].includes(currentSide)) {
+                        if (getValidMoves(row, col).length > 0) {
+                            return false;
+                        }
                     }
                 }
             }
-        }
-        return true;
-    }, [currentSide, getValidMoves]);
+            return true;
+        },
+        [currentSide, getValidMoves]
+    );
 
     const handleCellClick = useCallback(
         async (row: number, col: number) => {
@@ -285,7 +289,7 @@ export default function Checkers({ lobby, turn, endTurn }: Props) {
                                         ${isSelected ? 'ring-4 ring-yellow-400' : ''}
                                         ${isValidTarget ? 'ring-4 ring-green-400' : ''}
                                         ${lobby.winner ? 'cursor-not-allowed' : ''}`}
-                                    disabled={!!lobby.winner}
+                                    disabled={isSpectator}
                                 >
                                     <div
                                         className={`w-10 h-10 rounded-full flex items-center justify-center
