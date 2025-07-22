@@ -72,8 +72,10 @@ export function convertGameType(game: GameType) {
     switch (game) {
         case GameType.TicTacToe:
             return { ticTackToe: {} };
-        case GameType.RockPaperScissors:
-            return { rockPaperScissors: {} };
+        case GameType.Checkers:
+            return { checkers: {} };
+        case GameType.Reversi:
+            return { reversi: {} };
         case GameType.ConnectFour:
             return { connectFour: {} };
     }

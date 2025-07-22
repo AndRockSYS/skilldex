@@ -29,17 +29,20 @@ export const getStateName = (state: GameState): string => {
 export enum GameType {
     TicTacToe,
     ConnectFour,
-    RockPaperScissors,
+    Checkers,
+    Reversi,
 }
 
 export const getGameName = (game: GameType): string => {
     switch (game) {
         case GameType.TicTacToe:
             return 'Tic Tac Toe';
-        case GameType.RockPaperScissors:
-            return 'Rock Paper Scissors';
+        case GameType.Checkers:
+            return 'Checkers';
         case GameType.ConnectFour:
             return 'Four in a Row';
+        case GameType.Reversi:
+            return 'Reversi';
     }
 };
 
@@ -61,7 +64,7 @@ export const getMatchFormatName = (format: MatchFormat): string => {
             return 'Best of 5';
     }
 
-    return 'N/A'
+    return 'N/A';
 };
 
 export interface Lobby {
@@ -81,7 +84,7 @@ export interface Lobby {
 
     timeLimit: number;
     createdAt: Timestamp;
-    expirationTime: Timestamp;
+    expirationTime?: Timestamp;
 }
 
 export interface QueuePlayer {

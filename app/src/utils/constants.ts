@@ -13,6 +13,7 @@ export const TURN_LIMITS = [
 ];
 
 export const EXPIRATION_OPTIONS = [
+    { id: 0, name: 'Never' },
     { id: 60 * 60 * 1000, name: '1 Hour' },
     { id: 4 * 60 * 60 * 1000, name: '4 Hours' },
     { id: 12 * 60 * 1000, name: '12 Hours' },
@@ -71,5 +72,11 @@ export const GAME_SETTINGS = {
             Array(3)
                 .fill('none')
                 .map(() => Array(3).fill('none')),
+    },
+    reversi: {
+        initialBoard: () =>
+            Array(8)
+                .fill(null)
+                .map(() => Array(8).fill('none')),
     },
 };

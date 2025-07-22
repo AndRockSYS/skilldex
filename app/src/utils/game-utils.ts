@@ -11,12 +11,14 @@ export function findSeriesWinner({ format, creator, opponent }: Lobby): string |
     return null;
 }
 
-export function isTiedGame({format, creator, opponent}: Lobby): boolean {
-    if(!opponent) return false;
+export function isTiedGame({ format, creator, opponent }: Lobby): boolean {
+    if (!opponent) return false;
 
-    if(format == MatchFormat.Single) return creator.score == opponent.score && opponent.score == 1;
-    if(format == MatchFormat.BestOf3) return creator.score == opponent.score && opponent.score == 2;
-    if(format == MatchFormat.BestOf5) return creator.score == opponent.score && opponent.score == 3;
+    if (format == MatchFormat.Single) return creator.score == opponent.score && opponent.score == 1;
+    if (format == MatchFormat.BestOf3)
+        return creator.score == opponent.score && opponent.score == 2;
+    if (format == MatchFormat.BestOf5)
+        return creator.score == opponent.score && opponent.score == 3;
 
-    return false
+    return false;
 }
