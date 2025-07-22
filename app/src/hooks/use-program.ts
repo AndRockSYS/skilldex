@@ -82,7 +82,7 @@ const useProgram = () => {
                 .createLobby(
                     convertGameType(gameType),
                     new BN(bet),
-                    new BN(Math.floor(expireTime / 1000))
+                    expireTime ? new BN(Math.floor(expireTime / 1000)) : new BN(0)
                 )
                 .accounts({
                     //@ts-expect-error

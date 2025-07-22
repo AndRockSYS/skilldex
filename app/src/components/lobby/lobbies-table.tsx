@@ -223,7 +223,9 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                     <TableCell className='hidden sm:table-cell'>
                                         <div className='flex items-center whitespace-nowrap'>
                                             <Clock className='h-4 w-4 mr-1 text-muted-foreground shrink-0' />
-                                            {formatExpirationTime(lobby.expirationTime)}
+                                            {lobby.expirationTime
+                                                ? formatExpirationTime(lobby.expirationTime)
+                                                : 'Never'}
                                         </div>
                                     </TableCell>
                                 )}
@@ -254,7 +256,8 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                             disabled={
                                                 !!lobby.opponent ||
                                                 !publicKey ||
-                                                (lobby.expirationTime <= Date.now() &&
+                                                (lobby.expirationTime != undefined &&
+                                                    lobby.expirationTime <= Date.now() &&
                                                     publicKey.toString() != lobby.creator.wallet)
                                             }
                                             className='whitespace-nowrap'
@@ -267,7 +270,8 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                                 </>
                                             ) : publicKey?.toString() == lobby.creator.wallet ? (
                                                 'Cancel Challenge'
-                                            ) : lobby.expirationTime <= Date.now() ? (
+                                            ) : lobby.expirationTime != undefined &&
+                                              lobby.expirationTime <= Date.now() ? (
                                                 'Expired'
                                             ) : !!lobby.opponent ? (
                                                 'Full'

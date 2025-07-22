@@ -128,9 +128,9 @@ function CreateLobby() {
 
                 timeLimit: turnTime,
                 createdAt: Date.now(),
-                expirationTime: Date.now() + expirationTime,
             };
 
+            if (form.expiration) lobby.expirationTime = Date.now() + expirationTime;
             if (user.name) lobby.creator.name = user.name;
             if (user.avatar) lobby.creator.avatar = user.avatar;
 
