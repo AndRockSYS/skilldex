@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Props {
@@ -37,7 +36,13 @@ export default function ShareResult({ text }: Props) {
                 </Button>
                 <Button variant='outline' size='icon' asChild title='Share on Reddit'>
                     <Link href={redditShareUrl} target='_blank' rel='noopener noreferrer'>
-                        <MessageSquare className='h-5 w-5' />
+                        <Image
+                            className='size-5'
+                            src={'/icons/redit.svg'}
+                            alt='reddit'
+                            width={20}
+                            height={20}
+                        />
                     </Link>
                 </Button>
                 <Button variant='outline' size='icon' asChild title='Share on Instagram'>
