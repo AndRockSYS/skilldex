@@ -181,7 +181,7 @@ function CreateLobby() {
                                             Select Game
                                         </FormLabel>
                                         <FormControl>
-                                            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2'>
+                                            <div className='grid grid-cols-2 gap-3 pt-2'>
                                                 {games.map((game) => {
                                                     const isSelected = field.value === game.id;
                                                     return (
