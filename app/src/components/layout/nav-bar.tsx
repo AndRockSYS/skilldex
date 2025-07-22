@@ -142,14 +142,20 @@ const WalletBalance = ({ isMobile }: { isMobile: boolean }) => {
     const { publicKey } = useWallet();
     const { connection } = useConnection();
 
-    const { data: balance, isFetching } = useQuery({
+    const {
+        data: balance,
+        error,
+        isFetching,
+    } = useQuery({
         queryKey: [publicKey ?? 'user', 'balance'],
         queryFn: async () => {
             if (!publicKey) return 0;
+
             const balance = await connection.getBalance(publicKey);
             return balance / LAMPORTS_PER_SOL;
         },
         initialData: 0,
+        refetchInterval: 2_000,
     });
 
     return (
@@ -160,7 +166,7 @@ const WalletBalance = ({ isMobile }: { isMobile: boolean }) => {
                 isMobile ? 'text-xs' : 'text-sm'
             )}
         >
-            {isFetching ? (
+            {isFetching || !balance ? (
                 <Loader2
                     className={cn(isMobile ? 'size-3.5' : 'size-4', 'text-muted-foreground/70')}
                 />
@@ -169,7 +175,7 @@ const WalletBalance = ({ isMobile }: { isMobile: boolean }) => {
                     className={cn(isMobile ? 'size-3.5' : 'size-4', 'text-muted-foreground/70')}
                 />
             )}
-            <span>{isFetching ? 'Loading...' : balance.toFixed(2)}</span>
+            <span>{balance.toFixed(2)}</span>
         </span>
     );
 };
