@@ -1,9 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { FileText, ShieldCheck, Scale } from 'lucide-react';
+import { FileText, ShieldCheck, Scale, User } from 'lucide-react';
+
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useQuery } from '@tanstack/react-query';
+import useProgram from '@/hooks/use-program';
 
 export default function Footer() {
+    const { publicKey } = useWallet();
+
+    const { fetchPlatformData } = useProgram();
+
+    const { data: platformData } = useQuery({
+        queryKey: ['admin', 'platform'],
+        queryFn: async () => await fetchPlatformData(),
+    });
+
     return (
         <footer className='py-6 text-center text-muted-foreground text-xs sm:text-sm border-t bg-background z-10'>
             <div className='container mx-auto px-4'>
@@ -28,6 +41,14 @@ export default function Footer() {
                     >
                         <Scale size={14} /> Fees
                     </Link>
+                    {platformData?.platform_signer.toString() == publicKey?.toString() && (
+                        <Link
+                            href='/fees'
+                            className='hover:text-primary transition-colors flex items-center gap-1'
+                        >
+                            <User size={14} /> Admin
+                        </Link>
+                    )}
                 </div>
                 <div>
                     © {new Date().getFullYear()} SKILLDEX.IO. All rights reserved. Solana Edition.
