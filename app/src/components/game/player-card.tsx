@@ -1,23 +1,28 @@
 'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Card, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import Link from 'next/link';
 
 import { useEffect, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 
+import { EXPLORER_URL } from '@/utils/constants';
 import { formatWallet } from '@/utils/formatter';
 
 import { getStatusName, Player, PlayerStatus } from '@/types/user';
-import { Reaction } from '@/types/games';
+import { GameState, Lobby, Reaction } from '@/types/games';
 
 export default function PlayerCard({
+    lobby,
     player,
     turnWallet,
     isActive,
     reaction,
 }: {
+    lobby: Lobby;
     player: Player;
     turnWallet: string;
     isActive: boolean;
@@ -56,9 +61,6 @@ export default function PlayerCard({
                         alt={player.name}
                         data-ai-hint='player avatar'
                     />
-                    <AvatarFallback>
-                        {player.name?.substring(0, 2).toUpperCase() ?? formatWallet(player.wallet)}
-                    </AvatarFallback>
                 </Avatar>
                 <div>
                     <CardTitle className='font-headline text-lg sm:text-xl'>
@@ -70,7 +72,9 @@ export default function PlayerCard({
                             variant={player.wallet == turnWallet ? 'default' : 'secondary'}
                             className='text-xs sm:text-sm'
                         >
-                            {player.wallet == turnWallet
+                            {lobby.state == GameState.Finished
+                                ? getStatusName(PlayerStatus.Finished)
+                                : player.wallet == turnWallet
                                 ? getStatusName(PlayerStatus.Thinking)
                                 : getStatusName(PlayerStatus.Waiting)}
                         </Badge>
@@ -78,6 +82,13 @@ export default function PlayerCard({
                             <Badge variant='outline' className='ml-2 text-xs sm:text-sm'>
                                 Score: {player.score}
                             </Badge>
+                        )}
+                        {player.txSignature && (
+                            <Button variant='default' className='ml-2 text-xs sm:text-sm'>
+                                <Link href={EXPLORER_URL(player.txSignature)} target='_blank'>
+                                    Signature
+                                </Link>
+                            </Button>
                         )}
                     </div>
                 </div>

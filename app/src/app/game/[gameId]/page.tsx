@@ -165,6 +165,7 @@ export default function GameRoomPage() {
 
             <div className='grid md:grid-cols-3 gap-4 md:gap-6 items-start'>
                 <PlayerCard
+                    lobby={gameData}
                     player={gameData.creator}
                     isActive={turn?.playerWallet == gameData.creator.wallet}
                     turnWallet={turn?.playerWallet ?? ''}
@@ -234,6 +235,7 @@ export default function GameRoomPage() {
 
                 {gameData.opponent && (
                     <PlayerCard
+                        lobby={gameData}
                         player={gameData.opponent as any}
                         isActive={turn?.playerWallet == gameData.opponent.wallet}
                         turnWallet={turn?.playerWallet ?? ''}

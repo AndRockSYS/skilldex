@@ -30,6 +30,8 @@ export const REWARD_POINTS = {
 };
 
 export const PROGRAM_ADDRESS = 'FUQShdGHbGptGbQikvaEDvEEEGqChtDa1EuHQUBqQ6vQ';
+export const EXPLORER_URL = (signature: string) =>
+    `https://explorer.solana.com/tx/${signature}?cluster=testnet`;
 
 export const PDA_AFFIXES = {
     lobby: 'lobby',

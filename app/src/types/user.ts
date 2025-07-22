@@ -28,7 +28,7 @@ export enum PlayerStatus {
     Disconnected,
     Thinking,
     Waiting,
-    AI,
+    Finished,
 }
 
 export function getStatusName(status: PlayerStatus): string {
@@ -41,8 +41,8 @@ export function getStatusName(status: PlayerStatus): string {
             return 'Thinking';
         case PlayerStatus.Waiting:
             return 'Waiting';
-        case PlayerStatus.AI:
-            return 'AI';
+        case PlayerStatus.Finished:
+            return 'Finished';
     }
 }
 
