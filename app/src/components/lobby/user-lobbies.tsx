@@ -10,16 +10,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import {
-    Wallet,
-    Coins,
-    Clock,
-    Eye,
-    History,
-    Loader2,
-    ChevronRight,
-    ChevronLeft,
-} from 'lucide-react';
+import { Wallet, Coins, Eye, History, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { TabsContent } from '../ui/tabs';
 import { Card, CardContent, CardFooter } from '../ui/card';
 import Link from 'next/link';
@@ -28,25 +19,27 @@ import useProgram from '@/hooks/use-program';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useCallback, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import GameDatabase from '@/lib/firebase/games';
 
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
-import {
-    formatExpirationTime,
-    formatWallet,
-    GameIcon,
-    getLobbyDisplayStatus,
-} from '@/utils/formatter';
+import { formatWallet, GameIcon, getLobbyDisplayStatus } from '@/utils/formatter';
 
-import { GameState, getGameName, getMatchFormatName, Lobby, MatchFormat } from '@/types/games';
+import {
+    GameState,
+    getGameName,
+    getMatchFormatName,
+    Lobby,
+    MatchFormat,
+    Turn,
+} from '@/types/games';
 import { getTokenName } from '@/types/utils';
 
+type UserLobby = Lobby & Turn;
+
 export default function UserLobbies() {
-    const router = useRouter();
     const { toast } = useToast();
 
     const { publicKey } = useWallet();
@@ -57,19 +50,26 @@ export default function UserLobbies() {
 
     const {
         data: lobbies,
-
         fetchNextPage,
         hasPreviousPage,
         fetchPreviousPage,
-    } = useInfiniteQuery<Lobby[], Error>({
+    } = useInfiniteQuery<UserLobby[], Error>({
         queryKey: ['lobby', 'all', publicKey?.toString()],
-        queryFn: async ({ pageParam }) =>
-            publicKey
-                ? await GameDatabase.fetchUserLobbies(
-                      publicKey?.toString(),
-                      pageParam as number | undefined
-                  )
-                : [],
+        queryFn: async ({ pageParam }) => {
+            if (!publicKey) return [];
+            const lobbies = await GameDatabase.fetchUserLobbies(
+                publicKey?.toString(),
+                pageParam as number | undefined
+            );
+
+            const temp = [];
+            for (let lobby of lobbies) {
+                const turn = await GameDatabase.fetchTurn(lobby.id);
+                temp.push({ ...lobby, ...turn });
+            }
+
+            return temp;
+        },
         getNextPageParam: (lastPageLobbies) => {
             if (lastPageLobbies.length === 0) return undefined;
             return lastPageLobbies[lastPageLobbies.length - 1].createdAt;
@@ -238,11 +238,9 @@ export default function UserLobbies() {
                                                             {!lobby.opponent
                                                                 ? 'Wait Opponent'
                                                                 : publicKey?.toString() ==
-                                                                      lobby.creator.wallet ||
-                                                                  publicKey?.toString() ==
-                                                                      lobby.opponent.wallet
-                                                                ? 'Play'
-                                                                : 'View'}
+                                                                  lobby.playerWallet
+                                                                ? 'Your Turn'
+                                                                : "Opponent's Turn"}
                                                         </Link>
                                                     </Button>
                                                 )}
@@ -255,7 +253,12 @@ export default function UserLobbies() {
                                                     >
                                                         <Link href={`/game/${lobby.id}`}>
                                                             <History className='mr-2 h-4 w-4' />
-                                                            Details
+                                                            {lobby.winner
+                                                                ? 'Tie'
+                                                                : lobby.winner ==
+                                                                  publicKey.toString()
+                                                                ? 'You Won'
+                                                                : 'You Lose'}
                                                         </Link>
                                                     </Button>
                                                 )}
