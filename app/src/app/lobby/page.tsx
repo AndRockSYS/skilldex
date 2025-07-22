@@ -2,16 +2,9 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { PlusSquare, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PlusSquare, Search, Filter, ChevronLeft, ChevronRight, Gamepad } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import {
     Accordion,
@@ -84,7 +77,8 @@ export default function LobbyPage() {
             );
         }
 
-        if (gameType) filtered = filtered.filter((lobby) => lobby.gameType == gameType);
+        if ((gameType as any) != -1)
+            filtered = filtered.filter((lobby) => lobby.gameType == gameType);
 
         const parsedMinStake = parseFloat(minStake);
         if (!isNaN(parsedMinStake))
@@ -118,6 +112,40 @@ export default function LobbyPage() {
                 </Button>
             </div>
             <Announcements />
+            <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4'>
+                {[{ id: -1, icon: Gamepad, name: 'All Games' }, ...games].map((game) => {
+                    const isSelected = gameType === game.id;
+                    return (
+                        <button
+                            key={game.id}
+                            onClick={() => setGameType(game.id)}
+                            className={cn(
+                                'group rounded-lg border-2 p-4 text-center transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background',
+                                isSelected
+                                    ? 'bg-primary/10 border-primary'
+                                    : 'bg-card/50 border-border hover:border-primary/50'
+                            )}
+                        >
+                            <game.icon
+                                className={cn(
+                                    'h-10 w-10 mx-auto mb-3 transition-colors',
+                                    isSelected
+                                        ? 'text-primary'
+                                        : 'text-muted-foreground group-hover:text-primary'
+                                )}
+                            />
+                            <p
+                                className={cn(
+                                    'font-bold text-sm sm:text-base transition-colors',
+                                    isSelected ? 'text-primary' : 'text-foreground'
+                                )}
+                            >
+                                {game.name}
+                            </p>
+                        </button>
+                    );
+                })}
+            </div>
             <Accordion type='single' collapsible className='w-full'>
                 <AccordionItem value='filters' className='border-b-0 rounded-lg shadow-sm bg-card'>
                     <AccordionTrigger className='px-4 sm:px-6 py-4 hover:no-underline'>
@@ -129,30 +157,6 @@ export default function LobbyPage() {
                     <AccordionContent className='p-0'>
                         <div className='px-4 sm:px-6 pt-0 pb-4 space-y-4'>
                             <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end'>
-                                <div>
-                                    <Label htmlFor='game-filter' className='text-sm font-medium'>
-                                        Game Type
-                                    </Label>
-                                    <Select
-                                        value={gameType?.toString()}
-                                        onValueChange={(value) => setGameType(Number(value))}
-                                    >
-                                        <SelectTrigger id='game-filter'>
-                                            <SelectValue placeholder='Filter by game' />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value='all'>All Games</SelectItem>
-                                            {games.map((game) => (
-                                                <SelectItem
-                                                    key={game.id}
-                                                    value={game.id.toString()}
-                                                >
-                                                    {game.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
                                 <div>
                                     <Label
                                         htmlFor='min-stake-filter'
@@ -227,6 +231,7 @@ export default function LobbyPage() {
                                     lobbies={filteredLobbies.filter((lobby) => {
                                         return state == GameState.Open
                                             ? lobby.state == state &&
+                                                  lobby.expirationTime &&
                                                   lobby.expirationTime < Date.now()
                                             : lobby.state == state;
                                     })}
