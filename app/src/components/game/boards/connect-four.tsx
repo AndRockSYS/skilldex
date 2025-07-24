@@ -21,7 +21,7 @@ interface Props {
 }
 
 export default function ConnectFour({ lobby, isSpectator, turn, endTurn }: Props) {
-    const { data: board } = useQuery({
+    const { data: board, isSuccess } = useQuery({
         queryKey: ['gameData', 'connectFour', lobby.id],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
         initialData: GAME_SETTINGS.connectFour.initialBoard,
@@ -111,7 +111,7 @@ export default function ConnectFour({ lobby, isSpectator, turn, endTurn }: Props
                                 key={colIndex}
                                 onClick={() => handleColumnClick(colIndex)}
                                 className=' rounded-full bg-white flex items-center justify-center'
-                                disabled={isSpectator}
+                                disabled={isSpectator || !isSuccess}
                             >
                                 <div
                                     className={`w-10 h-10 rounded-full ${

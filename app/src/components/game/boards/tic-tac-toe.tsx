@@ -21,7 +21,7 @@ interface Props {
 }
 
 export default function TicTacToe({ lobby, isSpectator, turn, endTurn }: Props) {
-    const { data: board } = useQuery({
+    const { data: board, isSuccess } = useQuery({
         queryKey: ['gameData', 'ticTacToe', lobby.id],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
         initialData: GAME_SETTINGS.ticTacToe.initialBoard,
@@ -110,7 +110,7 @@ export default function TicTacToe({ lobby, isSpectator, turn, endTurn }: Props) 
                                 key={colIndex}
                                 onClick={() => handleCellClick(rowIndex, colIndex)}
                                 className='w-16 h-16 bg-white flex items-center justify-center text-2xl font-bold'
-                                disabled={isSpectator}
+                                disabled={isSpectator || !isSuccess}
                             >
                                 <span
                                     className={`${

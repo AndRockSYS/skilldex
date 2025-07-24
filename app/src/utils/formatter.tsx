@@ -99,10 +99,11 @@ export function generateTaunt(
 }
 
 export function convertTurnTimeLeft(timeLeft: number): string {
-    const totalSeconds = Math.floor(timeLeft / 1000);
+    const seconds = Math.floor(timeLeft / 1000);
 
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = Math.floor(totalSeconds - minutes * 60);
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
 
-    return `${minutes < 10 ? `0${minutes}` : minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
+    return [hrs, mins, secs].map((unit) => String(unit).padStart(2, '0')).join(':');
 }

@@ -30,7 +30,11 @@ export default function Checkers({ lobby, isSpectator, turn, endTurn }: Props) {
         [lobby, turn]
     );
 
-    const { data: board, refetch } = useQuery({
+    const {
+        data: board,
+        isSuccess,
+        refetch,
+    } = useQuery({
         queryKey: ['gameData', 'checkers', lobby.id],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
         initialData: GAME_SETTINGS.checkers.initialBoard(),
@@ -289,7 +293,7 @@ export default function Checkers({ lobby, isSpectator, turn, endTurn }: Props) {
                                         ${isSelected ? 'ring-4 ring-yellow-400' : ''}
                                         ${isValidTarget ? 'ring-4 ring-green-400' : ''}
                                         ${lobby.winner ? 'cursor-not-allowed' : ''}`}
-                                    disabled={isSpectator}
+                                    disabled={isSpectator || !isSuccess}
                                 >
                                     <div
                                         className={`w-10 h-10 rounded-full flex items-center justify-center
