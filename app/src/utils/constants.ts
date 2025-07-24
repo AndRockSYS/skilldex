@@ -76,9 +76,17 @@ export const GAME_SETTINGS = {
                 .map(() => Array(3).fill('none')),
     },
     reversi: {
-        initialBoard: () =>
-            Array(8)
+        initialBoard: () => {
+            const board = Array(8)
                 .fill(null)
-                .map(() => Array(8).fill('none')),
+                .map(() => Array(8).fill('none'));
+
+            board[3][3] = 'creator';
+            board[3][4] = 'opponent';
+            board[4][3] = 'opponent';
+            board[4][4] = 'creator';
+
+            return board;
+        },
     },
 };

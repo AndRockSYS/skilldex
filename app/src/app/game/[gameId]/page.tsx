@@ -32,6 +32,7 @@ import PlayerCard from '@/components/game/player-card';
 import ConnectFour from '@/components/game/boards/connect-four';
 import TicTacToe from '@/components/game/boards/tic-tac-toe';
 import Checkers from '@/components/game/boards/checkers';
+import Reversi from '@/components/game/boards/reversi';
 
 import { useParams } from 'next/navigation';
 import { useState, useCallback } from 'react';
@@ -205,8 +206,15 @@ export default function GameRoomPage() {
                             turn={turn}
                             endTurn={endTurn}
                         />
-                    ) : (
+                    ) : gameData.gameType == GameType.Checkers ? (
                         <Checkers
+                            lobby={gameData}
+                            isSpectator={isSpectator}
+                            turn={turn}
+                            endTurn={endTurn}
+                        />
+                    ) : (
+                        <Reversi
                             lobby={gameData}
                             isSpectator={isSpectator}
                             turn={turn}
