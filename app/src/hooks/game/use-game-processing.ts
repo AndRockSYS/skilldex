@@ -153,9 +153,11 @@ export default function useGameProcessing(gameId: number) {
                 const board =
                     gameData.gameType == GameType.ConnectFour
                         ? GAME_SETTINGS.connectFour.initialBoard()
-                        : gameData.gameType == GameType.RockPaperScissors
+                        : gameData.gameType == GameType.Checkers
                         ? GAME_SETTINGS.checkers.initialBoard()
-                        : GAME_SETTINGS.ticTacToe.initialBoard();
+                        : gameData.gameType == GameType.TicTacToe
+                        ? GAME_SETTINGS.ticTacToe.initialBoard()
+                        : GAME_SETTINGS.reversi.initialBoard();
 
                 await GameDatabase.uploadGameData(gameData.id, board);
                 await GameDatabase.updateTurn(gameData.id, updatedGameData.creator.wallet);
