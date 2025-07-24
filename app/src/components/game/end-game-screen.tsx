@@ -66,7 +66,11 @@ export default function EndGameScreen({ lobby }: Props) {
         const secondPlayer =
             publicKey.toString() == lobby.creator.wallet
                 ? lobby.opponent?.wallet
-                : lobby.creator.wallet;
+                : publicKey.toString() == lobby.opponent.wallet
+                ? lobby.creator.wallet
+                : undefined;
+
+        if (!secondPlayer) throw new Error('Not your game');
 
         try {
             await fetchLobbyData(lobby.id);

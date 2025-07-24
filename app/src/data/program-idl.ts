@@ -10,76 +10,8 @@ export const IDL = {
     },
     instructions: [
         {
-            name: 'close_lobby_as_platform',
-            discriminator: [238, 197, 66, 88, 167, 123, 220, 11],
-            accounts: [
-                {
-                    name: 'platform_signer',
-                    writable: true,
-                    signer: true,
-                    relations: ['platform_account'],
-                },
-                {
-                    name: 'platform_account',
-                    writable: true,
-                    pda: {
-                        seeds: [
-                            {
-                                kind: 'const',
-                                value: [112, 108, 97, 116, 102, 111, 114, 109],
-                            },
-                            {
-                                kind: 'const',
-                                value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
-                                ],
-                            },
-                        ],
-                    },
-                },
-                {
-                    name: 'lobby',
-                    writable: true,
-                    pda: {
-                        seeds: [
-                            {
-                                kind: 'const',
-                                value: [108, 111, 98, 98, 121],
-                            },
-                            {
-                                kind: 'arg',
-                                path: 'lobby_id',
-                            },
-                            {
-                                kind: 'const',
-                                value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
-                                ],
-                            },
-                        ],
-                    },
-                },
-                {
-                    name: 'player_account',
-                    writable: true,
-                },
-                {
-                    name: 'clock',
-                    address: 'SysvarC1ock11111111111111111111111111111111',
-                },
-            ],
-            args: [
-                {
-                    name: 'lobby_id',
-                    type: 'u64',
-                },
-            ],
-        },
-        {
-            name: 'close_lobby_as_player',
-            discriminator: [31, 196, 137, 104, 12, 70, 155, 148],
+            name: 'close_lobby',
+            discriminator: [4, 105, 152, 106, 82, 6, 43, 7],
             accounts: [
                 {
                     name: 'player',
@@ -102,8 +34,8 @@ export const IDL = {
                             {
                                 kind: 'const',
                                 value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
                                 ],
                             },
                         ],
@@ -116,6 +48,42 @@ export const IDL = {
                     type: 'u64',
                 },
             ],
+        },
+        {
+            name: 'close_platform_test',
+            discriminator: [20, 164, 191, 240, 38, 107, 147, 37],
+            accounts: [
+                {
+                    name: 'platform_signer',
+                    writable: true,
+                    signer: true,
+                    relations: ['platform_account'],
+                },
+                {
+                    name: 'platform_account',
+                    writable: true,
+                    pda: {
+                        seeds: [
+                            {
+                                kind: 'const',
+                                value: [112, 108, 97, 116, 102, 111, 114, 109],
+                            },
+                            {
+                                kind: 'const',
+                                value: [
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
+                                ],
+                            },
+                        ],
+                    },
+                },
+                {
+                    name: 'system_program',
+                    address: '11111111111111111111111111111111',
+                },
+            ],
+            args: [],
         },
         {
             name: 'create_lobby',
@@ -138,8 +106,8 @@ export const IDL = {
                             {
                                 kind: 'const',
                                 value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
                                 ],
                             },
                         ],
@@ -167,8 +135,8 @@ export const IDL = {
                             {
                                 kind: 'const',
                                 value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
                                 ],
                             },
                         ],
@@ -203,6 +171,74 @@ export const IDL = {
             ],
         },
         {
+            name: 'declare_tie',
+            discriminator: [173, 156, 166, 219, 187, 107, 97, 103],
+            accounts: [
+                {
+                    name: 'platform_signer',
+                    signer: true,
+                    relations: ['platform_account'],
+                },
+                {
+                    name: 'platform_account',
+                    writable: true,
+                    pda: {
+                        seeds: [
+                            {
+                                kind: 'const',
+                                value: [112, 108, 97, 116, 102, 111, 114, 109],
+                            },
+                            {
+                                kind: 'const',
+                                value: [
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
+                                ],
+                            },
+                        ],
+                    },
+                },
+                {
+                    name: 'player',
+                    writable: true,
+                    signer: true,
+                },
+                {
+                    name: 'second_player',
+                    writable: true,
+                },
+                {
+                    name: 'lobby',
+                    writable: true,
+                    pda: {
+                        seeds: [
+                            {
+                                kind: 'const',
+                                value: [108, 111, 98, 98, 121],
+                            },
+                            {
+                                kind: 'arg',
+                                path: 'lobby_id',
+                            },
+                            {
+                                kind: 'const',
+                                value: [
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
+                                ],
+                            },
+                        ],
+                    },
+                },
+            ],
+            args: [
+                {
+                    name: 'lobby_id',
+                    type: 'u64',
+                },
+            ],
+        },
+        {
             name: 'declare_winner',
             discriminator: [140, 135, 197, 50, 9, 23, 4, 80],
             accounts: [
@@ -223,8 +259,8 @@ export const IDL = {
                             {
                                 kind: 'const',
                                 value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
                                 ],
                             },
                         ],
@@ -251,8 +287,8 @@ export const IDL = {
                             {
                                 kind: 'const',
                                 value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
                                 ],
                             },
                         ],
@@ -287,8 +323,8 @@ export const IDL = {
                             {
                                 kind: 'const',
                                 value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
                                 ],
                             },
                         ],
@@ -322,8 +358,8 @@ export const IDL = {
                             {
                                 kind: 'const',
                                 value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
                                 ],
                             },
                         ],
@@ -350,8 +386,8 @@ export const IDL = {
                             {
                                 kind: 'const',
                                 value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
                                 ],
                             },
                         ],
@@ -395,8 +431,8 @@ export const IDL = {
                             {
                                 kind: 'const',
                                 value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
                                 ],
                             },
                         ],
@@ -434,8 +470,8 @@ export const IDL = {
                             {
                                 kind: 'const',
                                 value: [
-                                    115, 107, 105, 108, 108, 100, 101, 120, 51, 103, 102, 54, 51,
-                                    52, 98, 102,
+                                    115, 107, 105, 108, 108, 100, 101, 120, 81, 115, 100, 104, 100,
+                                    102, 102, 51,
                                 ],
                             },
                         ],
@@ -467,6 +503,10 @@ export const IDL = {
         {
             name: 'PlayerJoined',
             discriminator: [39, 144, 49, 106, 108, 210, 183, 38],
+        },
+        {
+            name: 'TieDeclared',
+            discriminator: [139, 124, 104, 146, 101, 17, 50, 233],
         },
         {
             name: 'WinnerSelected',
@@ -523,6 +563,9 @@ export const IDL = {
                         name: 'Active',
                     },
                     {
+                        name: 'Tie',
+                    },
+                    {
                         name: 'Won',
                         fields: [
                             {
@@ -540,13 +583,16 @@ export const IDL = {
                 kind: 'enum',
                 variants: [
                     {
-                        name: 'TicTackToe',
+                        name: 'TickTackToe',
                     },
                     {
                         name: 'ConnectFour',
                     },
                     {
-                        name: 'RockPaperScissors',
+                        name: 'Checkers',
+                    },
+                    {
+                        name: 'Reversi',
                     },
                 ],
             },
@@ -686,6 +732,18 @@ export const IDL = {
             },
         },
         {
+            name: 'TieDeclared',
+            type: {
+                kind: 'struct',
+                fields: [
+                    {
+                        name: 'lobby_id',
+                        type: 'u64',
+                    },
+                ],
+            },
+        },
+        {
             name: 'WinnerSelected',
             type: {
                 kind: 'struct',
@@ -714,104 +772,8 @@ export type Skilldex = {
     };
     instructions: [
         {
-            name: 'closeLobbyAsPlatform';
-            discriminator: [238, 197, 66, 88, 167, 123, 220, 11];
-            accounts: [
-                {
-                    name: 'platformSigner';
-                    writable: true;
-                    signer: true;
-                    relations: ['platformAccount'];
-                },
-                {
-                    name: 'platformAccount';
-                    writable: true;
-                    pda: {
-                        seeds: [
-                            {
-                                kind: 'const';
-                                value: [112, 108, 97, 116, 102, 111, 114, 109];
-                            },
-                            {
-                                kind: 'const';
-                                value: [
-                                    115,
-                                    107,
-                                    105,
-                                    108,
-                                    108,
-                                    100,
-                                    101,
-                                    120,
-                                    51,
-                                    103,
-                                    102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
-                                ];
-                            }
-                        ];
-                    };
-                },
-                {
-                    name: 'lobby';
-                    writable: true;
-                    pda: {
-                        seeds: [
-                            {
-                                kind: 'const';
-                                value: [108, 111, 98, 98, 121];
-                            },
-                            {
-                                kind: 'arg';
-                                path: 'lobbyId';
-                            },
-                            {
-                                kind: 'const';
-                                value: [
-                                    115,
-                                    107,
-                                    105,
-                                    108,
-                                    108,
-                                    100,
-                                    101,
-                                    120,
-                                    51,
-                                    103,
-                                    102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
-                                ];
-                            }
-                        ];
-                    };
-                },
-                {
-                    name: 'playerAccount';
-                    writable: true;
-                },
-                {
-                    name: 'clock';
-                    address: 'SysvarC1ock11111111111111111111111111111111';
-                }
-            ];
-            args: [
-                {
-                    name: 'lobbyId';
-                    type: 'u64';
-                }
-            ];
-        },
-        {
-            name: 'closeLobbyAsPlayer';
-            discriminator: [31, 196, 137, 104, 12, 70, 155, 148];
+            name: 'closeLobby';
+            discriminator: [4, 105, 152, 106, 82, 6, 43, 7];
             accounts: [
                 {
                     name: 'player';
@@ -842,14 +804,14 @@ export type Skilldex = {
                                     100,
                                     101,
                                     120,
-                                    51,
-                                    103,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
                                     102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
+                                    102,
+                                    51
                                 ];
                             }
                         ];
@@ -862,6 +824,56 @@ export type Skilldex = {
                     type: 'u64';
                 }
             ];
+        },
+        {
+            name: 'closePlatformTest';
+            discriminator: [20, 164, 191, 240, 38, 107, 147, 37];
+            accounts: [
+                {
+                    name: 'platformSigner';
+                    writable: true;
+                    signer: true;
+                    relations: ['platformAccount'];
+                },
+                {
+                    name: 'platformAccount';
+                    writable: true;
+                    pda: {
+                        seeds: [
+                            {
+                                kind: 'const';
+                                value: [112, 108, 97, 116, 102, 111, 114, 109];
+                            },
+                            {
+                                kind: 'const';
+                                value: [
+                                    115,
+                                    107,
+                                    105,
+                                    108,
+                                    108,
+                                    100,
+                                    101,
+                                    120,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
+                                    102,
+                                    102,
+                                    51
+                                ];
+                            }
+                        ];
+                    };
+                },
+                {
+                    name: 'systemProgram';
+                    address: '11111111111111111111111111111111';
+                }
+            ];
+            args: [];
         },
         {
             name: 'createLobby';
@@ -892,14 +904,14 @@ export type Skilldex = {
                                     100,
                                     101,
                                     120,
-                                    51,
-                                    103,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
                                     102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
+                                    102,
+                                    51
                                 ];
                             }
                         ];
@@ -935,14 +947,14 @@ export type Skilldex = {
                                     100,
                                     101,
                                     120,
-                                    51,
-                                    103,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
                                     102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
+                                    102,
+                                    51
                                 ];
                             }
                         ];
@@ -977,6 +989,102 @@ export type Skilldex = {
             ];
         },
         {
+            name: 'declareTie';
+            discriminator: [173, 156, 166, 219, 187, 107, 97, 103];
+            accounts: [
+                {
+                    name: 'platformSigner';
+                    signer: true;
+                    relations: ['platformAccount'];
+                },
+                {
+                    name: 'platformAccount';
+                    writable: true;
+                    pda: {
+                        seeds: [
+                            {
+                                kind: 'const';
+                                value: [112, 108, 97, 116, 102, 111, 114, 109];
+                            },
+                            {
+                                kind: 'const';
+                                value: [
+                                    115,
+                                    107,
+                                    105,
+                                    108,
+                                    108,
+                                    100,
+                                    101,
+                                    120,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
+                                    102,
+                                    102,
+                                    51
+                                ];
+                            }
+                        ];
+                    };
+                },
+                {
+                    name: 'player';
+                    writable: true;
+                    signer: true;
+                },
+                {
+                    name: 'secondPlayer';
+                    writable: true;
+                },
+                {
+                    name: 'lobby';
+                    writable: true;
+                    pda: {
+                        seeds: [
+                            {
+                                kind: 'const';
+                                value: [108, 111, 98, 98, 121];
+                            },
+                            {
+                                kind: 'arg';
+                                path: 'lobbyId';
+                            },
+                            {
+                                kind: 'const';
+                                value: [
+                                    115,
+                                    107,
+                                    105,
+                                    108,
+                                    108,
+                                    100,
+                                    101,
+                                    120,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
+                                    102,
+                                    102,
+                                    51
+                                ];
+                            }
+                        ];
+                    };
+                }
+            ];
+            args: [
+                {
+                    name: 'lobbyId';
+                    type: 'u64';
+                }
+            ];
+        },
+        {
             name: 'declareWinner';
             discriminator: [140, 135, 197, 50, 9, 23, 4, 80];
             accounts: [
@@ -1005,14 +1113,14 @@ export type Skilldex = {
                                     100,
                                     101,
                                     120,
-                                    51,
-                                    103,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
                                     102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
+                                    102,
+                                    51
                                 ];
                             }
                         ];
@@ -1047,14 +1155,14 @@ export type Skilldex = {
                                     100,
                                     101,
                                     120,
-                                    51,
-                                    103,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
                                     102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
+                                    102,
+                                    51
                                 ];
                             }
                         ];
@@ -1097,14 +1205,14 @@ export type Skilldex = {
                                     100,
                                     101,
                                     120,
-                                    51,
-                                    103,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
                                     102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
+                                    102,
+                                    51
                                 ];
                             }
                         ];
@@ -1146,14 +1254,14 @@ export type Skilldex = {
                                     100,
                                     101,
                                     120,
-                                    51,
-                                    103,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
                                     102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
+                                    102,
+                                    51
                                 ];
                             }
                         ];
@@ -1188,14 +1296,14 @@ export type Skilldex = {
                                     100,
                                     101,
                                     120,
-                                    51,
-                                    103,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
                                     102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
+                                    102,
+                                    51
                                 ];
                             }
                         ];
@@ -1247,14 +1355,14 @@ export type Skilldex = {
                                     100,
                                     101,
                                     120,
-                                    51,
-                                    103,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
                                     102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
+                                    102,
+                                    51
                                 ];
                             }
                         ];
@@ -1300,14 +1408,14 @@ export type Skilldex = {
                                     100,
                                     101,
                                     120,
-                                    51,
-                                    103,
+                                    81,
+                                    115,
+                                    100,
+                                    104,
+                                    100,
                                     102,
-                                    54,
-                                    51,
-                                    52,
-                                    98,
-                                    102
+                                    102,
+                                    51
                                 ];
                             }
                         ];
@@ -1339,6 +1447,10 @@ export type Skilldex = {
         {
             name: 'playerJoined';
             discriminator: [39, 144, 49, 106, 108, 210, 183, 38];
+        },
+        {
+            name: 'tieDeclared';
+            discriminator: [139, 124, 104, 146, 101, 17, 50, 233];
         },
         {
             name: 'winnerSelected';
@@ -1395,6 +1507,9 @@ export type Skilldex = {
                         name: 'active';
                     },
                     {
+                        name: 'tie';
+                    },
+                    {
                         name: 'won';
                         fields: [
                             {
@@ -1412,13 +1527,16 @@ export type Skilldex = {
                 kind: 'enum';
                 variants: [
                     {
-                        name: 'ticTackToe';
+                        name: 'tickTackToe';
                     },
                     {
                         name: 'connectFour';
                     },
                     {
-                        name: 'rockPaperScissors';
+                        name: 'checkers';
+                    },
+                    {
+                        name: 'reversi';
                     }
                 ];
             };
@@ -1552,6 +1670,18 @@ export type Skilldex = {
                     },
                     {
                         name: 'amount';
+                        type: 'u64';
+                    }
+                ];
+            };
+        },
+        {
+            name: 'tieDeclared';
+            type: {
+                kind: 'struct';
+                fields: [
+                    {
+                        name: 'lobbyId';
                         type: 'u64';
                     }
                 ];

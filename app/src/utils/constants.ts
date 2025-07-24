@@ -29,7 +29,7 @@ export const REWARD_POINTS = {
     won: 10,
 };
 
-export const PROGRAM_ADDRESS = 'FUQShdGHbGptGbQikvaEDvEEEGqChtDa1EuHQUBqQ6vQ';
+export const PROGRAM_ADDRESS = 'A5CZibVFGnFzJ6qDcUVbmKnmMtbkXpaeQZAd2RrygGrw';
 export const EXPLORER_URL = (signature: string) =>
     `https://explorer.solana.com/tx/${signature}?cluster=testnet`;
 

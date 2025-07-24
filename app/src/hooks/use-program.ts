@@ -144,7 +144,7 @@ const useProgram = () => {
             setIsProcessing(true);
 
             const tx = await program.methods
-                .closeLobbyAsPlayer(new BN(lobbyId))
+                .closeLobby(new BN(lobbyId))
                 .accounts({
                     player: wallet.publicKey,
                 })
@@ -197,19 +197,17 @@ const useProgram = () => {
 
             const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
 
-            // todo update solana program
-            // const tx = await program.methods
-            //     .declareTie(new BN(lobbyId))
-            //     .accounts({
-            //         //@ts-expect-error
-            //         platformSigner: platformSigner.publicKey,
-            //         payer: wallet.publicKey,
-            //         secondPlayer,
-            //     })
-            //     .transaction();
+            const tx = await program.methods
+                .declareTie(new BN(lobbyId))
+                .accounts({
+                    //@ts-expect-error
+                    platformSigner: platformSigner.publicKey,
+                    player: wallet.publicKey,
+                    secondPlayer,
+                })
+                .transaction();
 
-            // return await completeTransaction(tx, platformSigner);
-            return {} as any;
+            return await completeTransaction(tx, platformSigner);
         },
         [wallet]
     );
