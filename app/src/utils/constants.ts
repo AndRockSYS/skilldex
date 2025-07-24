@@ -29,14 +29,14 @@ export const REWARD_POINTS = {
     won: 10,
 };
 
-export const PROGRAM_ADDRESS = 'A5CZibVFGnFzJ6qDcUVbmKnmMtbkXpaeQZAd2RrygGrw';
+export const PROGRAM_ADDRESS = 'U8CC9mktAkr1kQQN3EtQg5MXy948pA3FFV3Wjx8aNiE';
 export const EXPLORER_URL = (signature: string) =>
     `https://explorer.solana.com/tx/${signature}?cluster=testnet`;
 
 export const PDA_AFFIXES = {
     lobby: 'lobby',
     platform: 'platform',
-    suffix: 'skilldex3gf634bf',
+    suffix: 'skilldexQsdhd2ff3',
 };
 
 export const GAME_SETTINGS = {
