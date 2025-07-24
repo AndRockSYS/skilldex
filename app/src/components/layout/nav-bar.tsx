@@ -144,8 +144,8 @@ const WalletBalance = ({ isMobile }: { isMobile: boolean }) => {
 
     const {
         data: balance,
-        error,
         isFetching,
+        isRefetching,
     } = useQuery({
         queryKey: [publicKey ?? 'user', 'balance'],
         queryFn: async () => {
@@ -166,9 +166,12 @@ const WalletBalance = ({ isMobile }: { isMobile: boolean }) => {
                 isMobile ? 'text-xs' : 'text-sm'
             )}
         >
-            {isFetching || !balance ? (
+            {isFetching && !balance ? (
                 <Loader2
-                    className={cn(isMobile ? 'size-3.5' : 'size-4', 'text-muted-foreground/70')}
+                    className={cn(
+                        isMobile ? 'size-3.5' : 'size-4',
+                        'text-muted-foreground/70 animate-spin'
+                    )}
                 />
             ) : (
                 <Coins
