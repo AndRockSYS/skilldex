@@ -36,7 +36,7 @@ export default function LobbyPage() {
 
     const [state, setState] = useState<GameState>(GameState.Open);
     const [searchTerm, setSearchTerm] = useState('');
-    const [gameType, setGameType] = useState<GameType>();
+    const [gameType, setGameType] = useState<GameType>(-1 as any);
     const [minStake, setMinStake] = useState<string>('');
     const [maxStake, setMaxStake] = useState<string>('');
 
@@ -231,8 +231,8 @@ export default function LobbyPage() {
                                     lobbies={filteredLobbies.filter((lobby) => {
                                         return state == GameState.Open
                                             ? lobby.state == state &&
-                                                  lobby.expirationTime &&
-                                                  lobby.expirationTime < Date.now()
+                                                  (!lobby.expirationTime ||
+                                                      lobby.expirationTime > Date.now())
                                             : lobby.state == state;
                                     })}
                                     status={state}

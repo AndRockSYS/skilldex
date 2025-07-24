@@ -67,9 +67,7 @@ export default class GameDatabase {
         if (lastCreatedAt) lobbiesQuery = query(lobbiesQuery, startAfter(lastCreatedAt));
 
         const snapshot = await getDocs(lobbiesQuery);
-        const lobbies = snapshot.docs
-            .map((snap) => snap.data() as Lobby)
-            .filter((lobby) => typeof lobby.createdAt === 'number');
+        const lobbies = snapshot.docs.map((snap) => snap.data() as Lobby);
         return lobbies;
     }
 

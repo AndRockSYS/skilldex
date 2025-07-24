@@ -37,7 +37,7 @@ import {
 } from '@/types/games';
 import { getTokenName } from '@/types/utils';
 
-type UserLobby = Lobby & Turn;
+type UserLobby = Lobby | (Lobby & Turn);
 
 export default function UserLobbies() {
     const { toast } = useToast();
@@ -64,8 +64,12 @@ export default function UserLobbies() {
 
             const temp = [];
             for (let lobby of lobbies) {
-                const turn = await GameDatabase.fetchTurn(lobby.id);
-                temp.push({ ...lobby, ...turn });
+                try {
+                    const turn = await GameDatabase.fetchTurn(lobby.id);
+                    temp.push({ ...lobby, ...turn });
+                } catch (error) {
+                    temp.push({ ...lobby, turn: undefined });
+                }
             }
 
             return temp;
@@ -203,7 +207,9 @@ export default function UserLobbies() {
                                                         disabled={
                                                             !!lobby.opponent ||
                                                             !publicKey ||
-                                                            (lobby.expirationTime <= Date.now() &&
+                                                            (lobby.expirationTime != undefined &&
+                                                                lobby.expirationTime <=
+                                                                    Date.now() &&
                                                                 publicKey.toString() !=
                                                                     lobby.creator.wallet)
                                                         }
@@ -219,7 +225,8 @@ export default function UserLobbies() {
                                                         ) : publicKey?.toString() ==
                                                           lobby.creator.wallet ? (
                                                             'Cancel Challenge'
-                                                        ) : lobby.expirationTime <= Date.now() ? (
+                                                        ) : lobby.expirationTime &&
+                                                          lobby.expirationTime <= Date.now() ? (
                                                             'Expired'
                                                         ) : (
                                                             'Full'
@@ -237,8 +244,10 @@ export default function UserLobbies() {
                                                             <Eye className='mr-2 h-4 w-4' />
                                                             {!lobby.opponent
                                                                 ? 'Wait Opponent'
+                                                                : (lobby as any).playerWallet
+                                                                ? 'Preparing'
                                                                 : publicKey?.toString() ==
-                                                                  lobby.playerWallet
+                                                                  (lobby as any).playerWallet
                                                                 ? 'Your Turn'
                                                                 : "Opponent's Turn"}
                                                         </Link>

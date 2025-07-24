@@ -25,7 +25,7 @@ export const lobbySchema = z
         gameType: z.custom<GameType>(),
         token: z.custom<Token>(),
         stake: z.coerce.number(),
-        expiration: z.number().min(1, 'Please select an expiration time'),
+        expiration: z.number().min(0, 'Please select an expiration time'),
         turnTimeLimit: z.number().min(1, 'Please select a turn time limit'),
         matchFormat: z.custom<MatchFormat>(),
     })
