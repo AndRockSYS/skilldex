@@ -87,7 +87,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                     variant: 'default',
                 });
 
-                router.push(`/game/${lobbyId}`);
+                window.open(`/game/${lobbyId}`, '_blank');
             } catch (error: any) {
                 await GameDatabase.dequeue(lobbyId);
                 toast({
@@ -135,7 +135,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
     );
 
     if (!lobbies.length)
-        return <p className='text-center py-8 text-muted-foreground'>No lobbies were found.</p>;
+        return <p className='text-center py-8 text-muted-foreground'>No games found</p>;
 
     return (
         <div className='overflow-x-auto'>
@@ -292,7 +292,7 @@ export default function LobbiesTable({ lobbies, status }: Props) {
                                             asChild
                                             className='whitespace-nowrap'
                                         >
-                                            <Link href={`/game/${lobby.id}`}>
+                                            <Link href={`/game/${lobby.id}`} target='_blank'>
                                                 <Eye className='mr-2 h-4 w-4' />
                                                 {!lobby.opponent
                                                     ? 'Wait Opponent'

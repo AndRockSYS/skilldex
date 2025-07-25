@@ -99,7 +99,7 @@ export default function LobbyPage() {
         <div className='space-y-8'>
             <div className='flex flex-col md:flex-row justify-between items-center gap-4'>
                 <h1 className='font-headline text-3xl md:text-4xl font-bold tracking-tight text-center md:text-left'>
-                    Live Challenge Lobby
+                    Games Lobby
                 </h1>
                 <Button
                     asChild
@@ -107,7 +107,7 @@ export default function LobbyPage() {
                 >
                     <Link href='/create-lobby' className='flex items-center px-4 py-2'>
                         <PlusSquare className='mr-2 h-5 w-5' />
-                        <span className='font-medium'>Create New Lobby</span>
+                        <span className='font-medium'>Create a Challenge</span>
                     </Link>
                 </Button>
             </div>
