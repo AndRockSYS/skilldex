@@ -1,6 +1,7 @@
 'use client';
 
 import { Trophy } from 'lucide-react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import LeaderboardTable from '@/components/leaderboard/leaderboard-table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -18,7 +19,16 @@ export default function LeaderboardPage() {
 
     return (
         <div className='container mx-auto py-8 px-4'>
-            <Card className='shadow-xl'>
+            <div className='fixed inset-0 -z-10'>
+                <Image
+                    src='/images/leaderboard.png'
+                    alt='background'
+                    fill
+                    className='object-cover'
+                    priority
+                />
+            </div>
+            <Card className='shadow-xl bg-transparent backdrop-blur-2xl'>
                 <CardHeader className='text-center'>
                     <Trophy className='mx-auto h-12 w-12 text-yellow-400 mb-3' />
                     <CardTitle className='font-headline text-3xl sm:text-4xl'>

@@ -6,8 +6,11 @@ import { FileText, ShieldCheck, Scale, User } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useQuery } from '@tanstack/react-query';
 import useProgram from '@/hooks/use-program';
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
+    const pathname = usePathname();
+
     const { publicKey } = useWallet();
 
     const { fetchPlatformData } = useProgram();
@@ -16,6 +19,8 @@ export default function Footer() {
         queryKey: ['admin', 'platform'],
         queryFn: async () => await fetchPlatformData(),
     });
+
+    if (pathname == '/') return <></>;
 
     return (
         <footer className='py-6 text-center text-muted-foreground text-xs sm:text-sm border-t bg-background z-10'>

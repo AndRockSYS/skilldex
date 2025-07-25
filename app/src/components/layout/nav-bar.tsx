@@ -6,7 +6,6 @@ import { Menu, CircleUserRound, Coins, Loader2 } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import InteractivePixelBackground from '@/components/layout/pixel-background';
 
 import { usePathname } from 'next/navigation';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
@@ -46,9 +45,6 @@ export default function NavBar() {
 
     return (
         <>
-            {!['/lobby', '/create-lobby', '/game', '/admin'].some((p) =>
-                pathname.startsWith(p)
-            ) && <InteractivePixelBackground />}
             <nav className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
                 <div className='w-full flex h-16 items-center justify-between px-8'>
                     <Link

@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LobbiesTable from '@/components/lobby/lobbies-table';
 import Announcements from '@/components/lobby/announcements';
 import UserLobbies from '@/components/lobby/user-lobbies';
+import Image from 'next/image';
 
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
@@ -110,6 +111,15 @@ export default function LobbyPage() {
                         <span className='font-medium'>Create a Challenge</span>
                     </Link>
                 </Button>
+            </div>
+            <div className='fixed inset-0 -z-10'>
+                <Image
+                    src='/images/lobby.png'
+                    alt='background'
+                    fill
+                    className='object-cover'
+                    priority
+                />
             </div>
             <Announcements />
             <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4'>

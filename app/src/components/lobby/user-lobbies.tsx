@@ -115,7 +115,7 @@ export default function UserLobbies() {
     );
 
     if (!publicKey || !lobbies.pages[page].length)
-        return <p className='text-center py-8 text-muted-foreground'>No lobbies were found.</p>;
+        return <p className='text-center py-8 text-muted-foreground'>No games found</p>;
 
     return (
         <TabsContent key={publicKey.toString()} value={publicKey.toString()} className='mt-4'>
