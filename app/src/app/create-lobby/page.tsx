@@ -227,14 +227,16 @@ function CreateLobby() {
                                                                     game.id
                                                                 )
                                                             }
-                                                            className="h-auto py-4 px-4 flex flex-col items-center justify-center space-y-2 text-center transition-all duration-200 ease-in-out rounded-lg border hover:shadow-primary/20 transform hover:scale-105"
+                                                            className="h-auto p-2 flex flex-col transition-all duration-200 ease-in-out rounded-lg border hover:shadow-primary/20 transform hover:scale-105"
                                                         >
-                                                            <game.icon
-                                                                className={`h-8 w-8 mb-1 ${
-                                                                    isSelected
-                                                                        ? "text-primary-foreground"
-                                                                        : "text-primary"
-                                                                }`}
+                                                            <Image
+                                                                className="rounded-2"
+                                                                src={
+                                                                    game.thumbnail
+                                                                }
+                                                                alt={game.name}
+                                                                width={500}
+                                                                height={400}
                                                             />
                                                             <span
                                                                 className={`text-sm font-medium ${
