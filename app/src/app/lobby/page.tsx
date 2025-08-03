@@ -1,45 +1,55 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { PlusSquare, Search, Filter, ChevronLeft, ChevronRight, Gamepad } from 'lucide-react';
-import Link from 'next/link';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import {
+    PlusSquare,
+    Search,
+    Filter,
+    ChevronLeft,
+    ChevronRight,
+    Gamepad,
+} from "lucide-react";
+import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import LobbiesTable from '@/components/lobby/lobbies-table';
-import Announcements from '@/components/lobby/announcements';
-import UserLobbies from '@/components/lobby/user-lobbies';
-import Image from 'next/image';
+} from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import LobbiesTable from "@/components/lobby/lobbies-table";
+import Announcements from "@/components/lobby/announcements";
+import UserLobbies from "@/components/lobby/user-lobbies";
+import Image from "next/image";
 
-import { useState, useMemo } from 'react';
-import { useParams } from 'next/navigation';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useWallet } from "@solana/wallet-adapter-react";
 
-import GameDatabase from '@/lib/firebase/games';
+import GameDatabase from "@/lib/firebase/games";
 
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { games } from '@/content/games';
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { games } from "@/content/games";
 
-import { GameState, GameType, Lobby } from '@/types/games';
-import { cn } from '@/lib/utils';
+import { GameState, GameType, Lobby } from "@/types/games";
+import { cn } from "@/lib/utils";
 
 export default function LobbyPage() {
     const { publicKey } = useWallet();
-    const { lobbyId } = useParams();
+    const searchParams = useSearchParams();
+    const lobbyId = searchParams.get("lobbyId");
+    const game = searchParams.get("game");
 
     const [state, setState] = useState<GameState>(GameState.Open);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [gameType, setGameType] = useState<GameType>(-1 as any);
-    const [minStake, setMinStake] = useState<string>('');
-    const [maxStake, setMaxStake] = useState<string>('');
+    const [searchTerm, setSearchTerm] = useState("");
+    const [gameType, setGameType] = useState<GameType>(Number(game ?? -1));
+
+    const [minStake, setMinStake] = useState<string>("");
+    const [maxStake, setMaxStake] = useState<string>("");
 
     const [page, setPage] = useState(0);
 
@@ -49,13 +59,18 @@ export default function LobbyPage() {
         hasPreviousPage,
         fetchPreviousPage,
     } = useInfiniteQuery<Lobby[], Error>({
-        queryKey: ['lobby', 'all', state],
+        queryKey: ["lobby", "all", state],
         queryFn: async ({ pageParam }) => {
             if (lobbyId && !isNaN(Number(lobbyId))) {
-                const lobby = await GameDatabase.fetchLobbyById(Number(lobbyId));
+                const lobby = await GameDatabase.fetchLobbyById(
+                    Number(lobbyId)
+                );
                 return lobby ? [lobby] : [];
             }
-            return await GameDatabase.fetchLobbies(state, pageParam as number | undefined);
+            return await GameDatabase.fetchLobbies(
+                state,
+                pageParam as number | undefined
+            );
         },
         getNextPageParam: (lastPageLobbies) => {
             if (lastPageLobbies.length === 0) return undefined;
@@ -84,138 +99,156 @@ export default function LobbyPage() {
         const parsedMinStake = parseFloat(minStake);
         if (!isNaN(parsedMinStake))
             filtered = filtered.filter(
-                (lobby) => lobby.pool.initial / LAMPORTS_PER_SOL >= parsedMinStake
+                (lobby) =>
+                    lobby.pool.initial / LAMPORTS_PER_SOL >= parsedMinStake
             );
 
         const parsedMaxStake = parseFloat(maxStake);
         if (!isNaN(parsedMaxStake))
             filtered = filtered.filter(
-                (lobby) => lobby.pool.initial / LAMPORTS_PER_SOL <= parsedMaxStake
+                (lobby) =>
+                    lobby.pool.initial / LAMPORTS_PER_SOL <= parsedMaxStake
             );
 
         return filtered;
     }, [lobbies, page, searchTerm, gameType, minStake, maxStake]);
 
     return (
-        <div className='space-y-8'>
-            <div className='flex flex-col md:flex-row justify-between items-center gap-4'>
-                <h1 className='font-headline text-3xl md:text-4xl font-bold tracking-tight text-center md:text-left'>
+        <div className="space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <h1 className="font-headline text-3xl md:text-4xl font-bold tracking-tight text-center md:text-left">
                     Games Lobby
                 </h1>
                 <Button
                     asChild
-                    className='w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground'
+                    className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                    <Link href='/create-lobby' className='flex items-center px-4 py-2'>
-                        <PlusSquare className='mr-2 h-5 w-5' />
-                        <span className='font-medium'>Create a Challenge</span>
+                    <Link
+                        href="/create-lobby"
+                        className="flex items-center px-4 py-2"
+                    >
+                        <PlusSquare className="mr-2 h-5 w-5" />
+                        <span className="font-medium">Create a Challenge</span>
                     </Link>
                 </Button>
             </div>
-            <div className='fixed inset-0 -z-10'>
+            <div className="fixed inset-0 -z-10">
                 <Image
-                    src='/images/lobby.png'
-                    alt='background'
+                    src="/images/lobby.png"
+                    alt="background"
                     fill
-                    className='object-cover'
+                    className="object-cover"
                     priority
                 />
             </div>
             <Announcements />
-            <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4'>
-                {[{ id: -1, icon: Gamepad, name: 'All Games' }, ...games].map((game) => {
-                    const isSelected = gameType === game.id;
-                    return (
-                        <button
-                            key={game.id}
-                            onClick={() => setGameType(game.id)}
-                            className={cn(
-                                'group rounded-lg border-2 p-4 text-center transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background',
-                                isSelected
-                                    ? 'bg-primary/10 border-primary'
-                                    : 'bg-card/50 border-border hover:border-primary/50'
-                            )}
-                        >
-                            <game.icon
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                {[{ id: -1, icon: Gamepad, name: "All Games" }, ...games].map(
+                    (game) => {
+                        const isSelected = gameType === game.id;
+                        return (
+                            <button
+                                key={game.id}
+                                onClick={() => setGameType(game.id)}
                                 className={cn(
-                                    'h-10 w-10 mx-auto mb-3 transition-colors',
+                                    "group rounded-lg border-2 p-4 text-center transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
                                     isSelected
-                                        ? 'text-primary'
-                                        : 'text-muted-foreground group-hover:text-primary'
-                                )}
-                            />
-                            <p
-                                className={cn(
-                                    'font-bold text-sm sm:text-base transition-colors',
-                                    isSelected ? 'text-primary' : 'text-foreground'
+                                        ? "bg-primary/10 border-primary"
+                                        : "bg-card/50 border-border hover:border-primary/50"
                                 )}
                             >
-                                {game.name}
-                            </p>
-                        </button>
-                    );
-                })}
+                                <game.icon
+                                    className={cn(
+                                        "h-10 w-10 mx-auto mb-3 transition-colors",
+                                        isSelected
+                                            ? "text-primary"
+                                            : "text-muted-foreground group-hover:text-primary"
+                                    )}
+                                />
+                                <p
+                                    className={cn(
+                                        "font-bold text-sm sm:text-base transition-colors",
+                                        isSelected
+                                            ? "text-primary"
+                                            : "text-foreground"
+                                    )}
+                                >
+                                    {game.name}
+                                </p>
+                            </button>
+                        );
+                    }
+                )}
             </div>
-            <Accordion type='single' collapsible className='w-full'>
-                <AccordionItem value='filters' className='border-b-0 rounded-lg shadow-sm bg-card'>
-                    <AccordionTrigger className='px-4 sm:px-6 py-4 hover:no-underline'>
-                        <div className='flex items-center text-xl font-semibold'>
-                            <Filter className='mr-2 h-5 w-5 text-primary' />
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem
+                    value="filters"
+                    className="border-b-0 rounded-lg shadow-sm bg-card"
+                >
+                    <AccordionTrigger className="px-4 sm:px-6 py-4 hover:no-underline">
+                        <div className="flex items-center text-xl font-semibold">
+                            <Filter className="mr-2 h-5 w-5 text-primary" />
                             Filters
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className='p-0'>
-                        <div className='px-4 sm:px-6 pt-0 pb-4 space-y-4'>
-                            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end'>
+                    <AccordionContent className="p-0">
+                        <div className="px-4 sm:px-6 pt-0 pb-4 space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
                                 <div>
                                     <Label
-                                        htmlFor='min-stake-filter'
-                                        className='text-sm font-medium'
+                                        htmlFor="min-stake-filter"
+                                        className="text-sm font-medium"
                                     >
                                         Min Stake (SOL/XNT)
                                     </Label>
                                     <Input
-                                        id='min-stake-filter'
-                                        type='number'
-                                        placeholder='e.g., 0.1 or 1'
+                                        id="min-stake-filter"
+                                        type="number"
+                                        placeholder="e.g., 0.1 or 1"
                                         value={minStake}
-                                        onChange={(e) => setMinStake(e.target.value)}
-                                        min='0'
-                                        step='0.01'
+                                        onChange={(e) =>
+                                            setMinStake(e.target.value)
+                                        }
+                                        min="0"
+                                        step="0.01"
                                     />
                                 </div>
                                 <div>
                                     <Label
-                                        htmlFor='max-stake-filter'
-                                        className='text-sm font-medium'
+                                        htmlFor="max-stake-filter"
+                                        className="text-sm font-medium"
                                     >
                                         Max Stake (SOL/XNT)
                                     </Label>
                                     <Input
-                                        id='max-stake-filter'
-                                        type='number'
-                                        placeholder='e.g., 10'
+                                        id="max-stake-filter"
+                                        type="number"
+                                        placeholder="e.g., 10"
                                         value={maxStake}
-                                        onChange={(e) => setMaxStake(e.target.value)}
-                                        min='0'
-                                        step='0.01'
+                                        onChange={(e) =>
+                                            setMaxStake(e.target.value)
+                                        }
+                                        min="0"
+                                        step="0.01"
                                     />
                                 </div>
                             </div>
-                            <div className='relative'>
+                            <div className="relative">
                                 <Label
-                                    htmlFor='search-filter'
-                                    className='text-sm font-medium sr-only'
+                                    htmlFor="search-filter"
+                                    className="text-sm font-medium sr-only"
                                 >
                                     Search All
                                 </Label>
-                                <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none' />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                                 <Input
-                                    id='search-filter'
-                                    placeholder='Search by challenger or lobby id'
-                                    className='pl-10'
+                                    id="search-filter"
+                                    placeholder="Search by challenger or lobby id"
+                                    className="pl-10"
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={(e) =>
+                                        setSearchTerm(e.target.value)
+                                    }
                                 />
                             </div>
                         </div>
@@ -225,52 +258,86 @@ export default function LobbyPage() {
             <Tabs
                 defaultValue={GameState.Open.toString()}
                 onValueChange={(value) => setState(Number(value) as GameState)}
-                className='w-full'
+                className="w-full"
             >
-                <TabsList className={cn('grid w-full', publicKey ? 'grid-cols-4' : 'grid-cols-3')}>
-                    <TabsTrigger value={GameState.Open.toString()}>Open</TabsTrigger>
-                    <TabsTrigger value={GameState.Active.toString()}>Active</TabsTrigger>
-                    <TabsTrigger value={GameState.Finished.toString()}>History</TabsTrigger>
-                    {publicKey && <TabsTrigger value={publicKey.toString()}>My Games</TabsTrigger>}
+                <TabsList
+                    className={cn(
+                        "grid w-full",
+                        publicKey ? "grid-cols-4" : "grid-cols-3"
+                    )}
+                >
+                    <TabsTrigger value={GameState.Open.toString()}>
+                        Open
+                    </TabsTrigger>
+                    <TabsTrigger value={GameState.Active.toString()}>
+                        Active
+                    </TabsTrigger>
+                    <TabsTrigger value={GameState.Finished.toString()}>
+                        History
+                    </TabsTrigger>
+                    {publicKey && (
+                        <TabsTrigger value={publicKey.toString()}>
+                            My Games
+                        </TabsTrigger>
+                    )}
                 </TabsList>
-                {[GameState.Open, GameState.Active, GameState.Finished].map((state) => (
-                    <TabsContent key={state} value={state.toString()} className='mt-4'>
-                        <Card>
-                            <CardContent className='p-0'>
-                                <LobbiesTable
-                                    lobbies={filteredLobbies.filter((lobby) => {
-                                        return state == GameState.Open
-                                            ? lobby.state == state &&
-                                                  (!lobby.expirationTime ||
-                                                      lobby.expirationTime > Date.now())
-                                            : lobby.state == state;
-                                    })}
-                                    status={state}
-                                />
-                            </CardContent>
-                            <CardFooter className='flex justify-between items-center py-4 border-t'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    onClick={() =>
-                                        fetchPreviousPage().then(() => setPage(page - 1))
-                                    }
-                                    disabled={hasPreviousPage || page == 0}
-                                >
-                                    <ChevronLeft className='mr-2 h-4 w-4' /> Previous
-                                </Button>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    onClick={() => fetchNextPage().then(() => setPage(page + 1))}
-                                    disabled={lobbies.pages[page].length == 0}
-                                >
-                                    Next <ChevronRight className='ml-2 h-4 w-4' />
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    </TabsContent>
-                ))}
+                {[GameState.Open, GameState.Active, GameState.Finished].map(
+                    (state) => (
+                        <TabsContent
+                            key={state}
+                            value={state.toString()}
+                            className="mt-4"
+                        >
+                            <Card>
+                                <CardContent className="p-0">
+                                    <LobbiesTable
+                                        lobbies={filteredLobbies.filter(
+                                            (lobby) => {
+                                                return state == GameState.Open
+                                                    ? lobby.state == state &&
+                                                          (!lobby.expirationTime ||
+                                                              lobby.expirationTime >
+                                                                  Date.now())
+                                                    : lobby.state == state;
+                                            }
+                                        )}
+                                        status={state}
+                                    />
+                                </CardContent>
+                                <CardFooter className="flex justify-between items-center py-4 border-t">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            fetchPreviousPage().then(() =>
+                                                setPage(page - 1)
+                                            )
+                                        }
+                                        disabled={hasPreviousPage || page == 0}
+                                    >
+                                        <ChevronLeft className="mr-2 h-4 w-4" />{" "}
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            fetchNextPage().then(() =>
+                                                setPage(page + 1)
+                                            )
+                                        }
+                                        disabled={
+                                            lobbies.pages[page].length == 0
+                                        }
+                                    >
+                                        Next{" "}
+                                        <ChevronRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        </TabsContent>
+                    )
+                )}
                 <UserLobbies />
             </Tabs>
         </div>
