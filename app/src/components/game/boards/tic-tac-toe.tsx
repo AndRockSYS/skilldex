@@ -1,28 +1,35 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useQuery } from '@tanstack/react-query';
+import Image from "next/image";
 
-import GameDatabase from '@/lib/firebase/games';
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useQuery } from "@tanstack/react-query";
 
-import { GAME_SETTINGS } from '@/utils/constants';
+import GameDatabase from "@/lib/firebase/games";
 
-import { Lobby, Turn } from '@/types/games';
+import { GAME_SETTINGS } from "@/utils/constants";
 
-type Player = 'creator' | 'opponent' | 'none';
+import { Lobby, Turn } from "@/types/games";
+
+type Player = "creator" | "opponent" | "none";
 type Board = Player[][];
 
 interface Props {
     lobby: Lobby;
     turn: Turn | undefined;
     isSpectator: boolean;
-    endTurn: (winnerSide?: 'creator' | 'opponent' | 'tie') => Promise<void>;
+    endTurn: (winnerSide?: "creator" | "opponent" | "tie") => Promise<void>;
 }
 
-export default function TicTacToe({ lobby, isSpectator, turn, endTurn }: Props) {
+export default function TicTacToe({
+    lobby,
+    isSpectator,
+    turn,
+    endTurn,
+}: Props) {
     const { data: board, isSuccess } = useQuery({
-        queryKey: ['gameData', 'ticTacToe', lobby.id],
+        queryKey: ["gameData", "ticTacToe", lobby.id],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
         initialData: GAME_SETTINGS.ticTacToe.initialBoard,
         refetchInterval: 1_000,
@@ -30,13 +37,15 @@ export default function TicTacToe({ lobby, isSpectator, turn, endTurn }: Props) 
 
     const { publicKey } = useWallet();
     const currentSide = useMemo(
-        () => (lobby.creator.wallet == turn?.playerWallet ? 'creator' : 'opponent'),
+        () =>
+            lobby.creator.wallet == turn?.playerWallet ? "creator" : "opponent",
         [lobby, turn]
     );
 
     const isPlaced = useRef(false);
     useEffect(() => {
-        if (publicKey?.toString() == turn?.playerWallet) isPlaced.current = false;
+        if (publicKey?.toString() == turn?.playerWallet)
+            isPlaced.current = false;
     }, [publicKey, turn]);
 
     const hasWinner = useCallback(
@@ -82,51 +91,55 @@ export default function TicTacToe({ lobby, isSpectator, turn, endTurn }: Props) 
             if (
                 isPlaced.current ||
                 publicKey?.toString() != turn?.playerWallet ||
-                board[row][col] != 'none'
+                board[row][col] != "none"
             )
                 return;
             isPlaced.current = true;
 
             const newBoard: Board = board.map((r) => [...r]);
             newBoard[row][col] = currentSide;
-            const isTie = newBoard.every((row) => row.every((cell) => cell != 'none'));
+            const isTie = newBoard.every((row) =>
+                row.every((cell) => cell != "none")
+            );
 
             await GameDatabase.uploadGameData(lobby.id, newBoard);
 
             if (hasWinner(newBoard)) await endTurn(currentSide);
-            else if (isTie) await endTurn('tie');
+            else if (isTie) await endTurn("tie");
             else await endTurn();
         },
         [board, publicKey, turn, currentSide]
     );
 
     return (
-        <div className='flex flex-col items-center p-4'>
-            <div className='grid gap-2 bg-blue-800 p-4 rounded-lg'>
-                {board.map((row, rowIndex) => (
-                    <div key={rowIndex} className='flex gap-2'>
-                        {row.map((cell, colIndex) => (
-                            <button
-                                key={colIndex}
-                                onClick={() => handleCellClick(rowIndex, colIndex)}
-                                className='w-16 h-16 bg-white flex items-center justify-center text-2xl font-bold'
-                                disabled={isSpectator || !isSuccess}
-                            >
-                                <span
-                                    className={`${
-                                        cell == 'creator'
-                                            ? 'text-blue-600'
-                                            : cell == 'opponent'
-                                            ? 'text-orange-600'
-                                            : ''
-                                    }`}
+        <div className="flex flex-col items-center p-4">
+            <div className="bg-gradient-to-br from-[#2cdbfd] to-[#ee3dfc] rounded-lg p-1">
+                <div className="grid gap-2 bg-[#000815] p-4 rounded-lg">
+                    {board.map((row, rowIndex) => (
+                        <div key={rowIndex} className="flex gap-2">
+                            {row.map((cell, colIndex) => (
+                                <button
+                                    key={colIndex}
+                                    onClick={() =>
+                                        handleCellClick(rowIndex, colIndex)
+                                    }
+                                    className="w-16 h-16 bg-[#081d35] border border-[#2cdbfd] flex items-center justify-center rounded-md"
+                                    disabled={isSpectator || !isSuccess}
                                 >
-                                    {cell == 'creator' ? 'O' : 'X'}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                ))}
+                                    {cell != "none" && (
+                                        <Image
+                                            className="p-2"
+                                            src={`/images/games/tic-tac-toe/${cell}.png`}
+                                            alt={cell}
+                                            width={150}
+                                            height={150}
+                                        />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
