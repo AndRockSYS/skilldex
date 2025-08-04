@@ -1,22 +1,25 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useQuery } from "@tanstack/react-query";
 
-import GameDatabase from '@/lib/firebase/games';
+import GameDatabase from "@/lib/firebase/games";
 
-import { GAME_SETTINGS } from '@/utils/constants';
-import { Lobby, Turn } from '@/types/games';
+import { GAME_SETTINGS } from "@/utils/constants";
 
-type Side = 'creator' | 'opponent' | 'none';
+import { cn } from "@/lib/utils";
+
+import { Lobby, Turn } from "@/types/games";
+
+type Side = "creator" | "opponent" | "none";
 type Board = Side[][];
 
 interface Props {
     lobby: Lobby;
     turn: Turn | undefined;
     isSpectator: boolean;
-    endTurn: (winnerSide?: 'creator' | 'opponent' | 'tie') => Promise<void>;
+    endTurn: (winnerSide?: "creator" | "opponent" | "tie") => Promise<void>;
 }
 
 const SIZE = 8;
@@ -30,7 +33,10 @@ export default function Reversi({ lobby, isSpectator, turn, endTurn }: Props) {
     const { publicKey } = useWallet();
 
     const currentSide = useMemo(
-        () => (lobby.creator.wallet === turn?.playerWallet ? 'creator' : 'opponent'),
+        () =>
+            lobby.creator.wallet === turn?.playerWallet
+                ? "creator"
+                : "opponent",
         [lobby, turn]
     );
 
@@ -39,7 +45,7 @@ export default function Reversi({ lobby, isSpectator, turn, endTurn }: Props) {
         isSuccess,
         refetch,
     } = useQuery({
-        queryKey: ['gameData', 'reversi', lobby.id],
+        queryKey: ["gameData", "reversi", lobby.id],
         queryFn: async () => await GameDatabase.fetchGameData<Board>(lobby.id),
         initialData: GAME_SETTINGS.reversi.initialBoard(),
         refetchInterval: 1_000,
@@ -65,7 +71,7 @@ export default function Reversi({ lobby, isSpectator, turn, endTurn }: Props) {
 
     const getFlips = useCallback(
         (row: number, col: number, board: Board): [number, number][] => {
-            if (board[row][col] !== 'none') return [];
+            if (board[row][col] !== "none") return [];
 
             const flips: [number, number][] = [];
 
@@ -79,7 +85,7 @@ export default function Reversi({ lobby, isSpectator, turn, endTurn }: Props) {
                     r < SIZE &&
                     c >= 0 &&
                     c < SIZE &&
-                    board[r][c] !== 'none' &&
+                    board[r][c] !== "none" &&
                     board[r][c] !== currentSide
                 ) {
                     path.push([r, c]);
@@ -132,8 +138,8 @@ export default function Reversi({ lobby, isSpectator, turn, endTurn }: Props) {
         const counts = { creator: 0, opponent: 0 };
         for (const row of board) {
             for (const cell of row) {
-                if (cell === 'creator') counts.creator++;
-                else if (cell === 'opponent') counts.opponent++;
+                if (cell === "creator") counts.creator++;
+                else if (cell === "opponent") counts.opponent++;
             }
         }
         return counts;
@@ -141,9 +147,15 @@ export default function Reversi({ lobby, isSpectator, turn, endTurn }: Props) {
 
     const handleCellClick = useCallback(
         async (row: number, col: number) => {
-            if (isPlaced.current || publicKey?.toString() !== turn?.playerWallet) return;
+            if (
+                isPlaced.current ||
+                publicKey?.toString() !== turn?.playerWallet
+            )
+                return;
 
-            const move = validMoves.find(({ move }) => move[0] === row && move[1] === col);
+            const move = validMoves.find(
+                ({ move }) => move[0] === row && move[1] === col
+            );
             if (!move) return;
 
             const { flips } = move;
@@ -157,50 +169,71 @@ export default function Reversi({ lobby, isSpectator, turn, endTurn }: Props) {
 
             await GameDatabase.uploadGameData(lobby.id, newBoard);
 
-            const nextMoves = getValidMoves(newBoard).filter((m) => m.flips.length > 0);
+            const nextMoves = getValidMoves(newBoard).filter(
+                (m) => m.flips.length > 0
+            );
 
             const discCount = countDiscs(newBoard);
             const totalPlaced = discCount.creator + discCount.opponent;
             const maxCells = SIZE * SIZE;
 
             if (totalPlaced === maxCells || nextMoves.length === 0) {
-                if (discCount.creator > discCount.opponent) await endTurn('creator');
-                else if (discCount.opponent > discCount.creator) await endTurn('opponent');
-                else await endTurn('tie');
+                if (discCount.creator > discCount.opponent)
+                    await endTurn("creator");
+                else if (discCount.opponent > discCount.creator)
+                    await endTurn("opponent");
+                else await endTurn("tie");
             } else {
                 await endTurn();
             }
 
             await refetch();
         },
-        [validMoves, board, currentSide, publicKey, turn, getValidMoves, endTurn, refetch]
+        [
+            validMoves,
+            board,
+            currentSide,
+            publicKey,
+            turn,
+            getValidMoves,
+            endTurn,
+            refetch,
+        ]
     );
 
     return (
-        <div className='flex flex-col items-center p-4'>
-            <div className='grid gap-1 bg-green-800 p-4 rounded-lg'>
+        <div className="flex flex-col items-center p-4">
+            <div className="grid gap-1 bg-[#242626] border-2 border-[#dd1ab1] p-4 rounded-lg">
                 {board.map((row, rowIndex) => (
-                    <div key={rowIndex} className='flex gap-1'>
+                    <div key={rowIndex} className="flex gap-1">
                         {row.map((cell, colIndex) => (
                             <button
                                 key={colIndex}
-                                onClick={() => handleCellClick(rowIndex, colIndex)}
-                                className={`w-10 h-10 rounded-full flex items-center justify-center
-                                    ${
-                                        cell === 'creator'
-                                            ? 'bg-blue-600'
-                                            : cell === 'opponent'
-                                            ? 'bg-orange-600'
-                                            : 'bg-green-300'
-                                    }
+                                onClick={() =>
+                                    handleCellClick(rowIndex, colIndex)
+                                }
+                                className={`w-10 h-10 flex items-center justify-center bg-[#1e4d2d]
                                     ${
                                         isMoveAvailable(rowIndex, colIndex)
-                                            ? 'ring-2 ring-yellow-300'
-                                            : ''
+                                            ? "ring-2 ring-yellow-300"
+                                            : ""
                                     }
-                                    ${lobby.winner ? 'cursor-not-allowed' : ''}`}
+                                    ${
+                                        lobby.winner ? "cursor-not-allowed" : ""
+                                    }`}
                                 disabled={isSpectator || !isSuccess}
-                            />
+                            >
+                                {cell != "none" && (
+                                    <div
+                                        className={cn(
+                                            "size-10 fill-current rounded-full",
+                                            cell == "opponent"
+                                                ? "bg-white"
+                                                : "bg-black"
+                                        )}
+                                    />
+                                )}
+                            </button>
                         ))}
                     </div>
                 ))}
