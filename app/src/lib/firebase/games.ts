@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp } from "firebase/app";
 import {
     collection,
     doc,
@@ -14,14 +14,29 @@ import {
     where,
     deleteDoc,
     or,
-} from 'firebase/firestore';
-import { get, getDatabase, ref, update, remove, child, set } from 'firebase/database';
+} from "firebase/firestore";
+import {
+    get,
+    getDatabase,
+    ref,
+    update,
+    remove,
+    child,
+    set,
+} from "firebase/database";
 
-import config from '@/config/firebase.json';
-import { QUEUE_TIME_LIMIT } from '@/utils/constants';
+import config from "@/config/firebase.json";
+import { QUEUE_TIME_LIMIT } from "@/utils/constants";
 
-import { GameState, Lobby, QueuePlayer, Reaction, Turn } from '@/types/games';
-import { Player } from '@/types/user';
+import {
+    GameState,
+    GameType,
+    Lobby,
+    QueuePlayer,
+    Reaction,
+    Turn,
+} from "@/types/games";
+import { Player } from "@/types/user";
 
 export default class GameDatabase {
     static app = initializeApp(config);
@@ -29,42 +44,60 @@ export default class GameDatabase {
     static firestore = getFirestore(this.app);
 
     static async createLobby(lobby: Lobby) {
-        const gameRef = doc(this.firestore, 'games', lobby.id.toString());
+        const gameRef = doc(this.firestore, "games", lobby.id.toString());
         await setDoc(gameRef, lobby as any);
     }
 
     static async fetchLobbyById(gameId: number): Promise<Lobby> {
-        const gameRef = doc(this.firestore, 'games', gameId.toString());
+        const gameRef = doc(this.firestore, "games", gameId.toString());
         const snapshot = await getDoc(gameRef);
 
-        if (!snapshot.exists()) throw new Error('Game with provided id does not exist.');
+        if (!snapshot.exists())
+            throw new Error("Game with provided id does not exist.");
         return snapshot.data() as Lobby;
     }
 
-    static async fetchUserLobbies(wallet: string, lastCreatedAt?: number): Promise<Lobby[]> {
+    static async fetchUserLobbies(
+        wallet: string,
+        lastCreatedAt?: number
+    ): Promise<Lobby[]> {
         let lobbiesQuery = query(
-            collection(this.firestore, 'games'),
-            or(where('creator.wallet', '==', wallet), where('opponent.wallet', '==', wallet)),
-            orderBy('createdAt', 'desc'),
+            collection(this.firestore, "games"),
+            or(
+                where("creator.wallet", "==", wallet),
+                where("opponent.wallet", "==", wallet)
+            ),
+            orderBy("createdAt", "desc"),
             limit(5)
         );
 
-        if (lastCreatedAt) lobbiesQuery = query(lobbiesQuery, startAfter(lastCreatedAt));
+        if (lastCreatedAt)
+            lobbiesQuery = query(lobbiesQuery, startAfter(lastCreatedAt));
 
         const snapshot = await getDocs(lobbiesQuery);
         const lobbies = snapshot.docs.map((snap) => snap.data() as Lobby);
         return lobbies;
     }
 
-    static async fetchLobbies(state: GameState, lastCreatedAt?: number): Promise<Lobby[]> {
+    static async fetchLobbies(
+        state: GameState,
+        gameType: GameType | -1,
+        lastCreatedAt?: number
+    ): Promise<Lobby[]> {
         let lobbiesQuery = query(
-            collection(this.firestore, 'games'),
-            where('state', '==', state),
-            orderBy('createdAt', 'desc'),
+            collection(this.firestore, "games"),
+            where("state", "==", state),
+            orderBy("createdAt", "desc"),
             limit(10)
         );
 
-        if (lastCreatedAt) lobbiesQuery = query(lobbiesQuery, startAfter(lastCreatedAt));
+        if (lastCreatedAt)
+            lobbiesQuery = query(lobbiesQuery, startAfter(lastCreatedAt));
+        if (gameType > -1)
+            lobbiesQuery = query(
+                lobbiesQuery,
+                where("gameType", "==", gameType)
+            );
 
         const snapshot = await getDocs(lobbiesQuery);
         const lobbies = snapshot.docs.map((snap) => snap.data() as Lobby);
@@ -72,7 +105,7 @@ export default class GameDatabase {
     }
 
     static async addOpponent(gameId: number, opponent: Player) {
-        const opponentRef = doc(this.firestore, 'games', gameId.toString());
+        const opponentRef = doc(this.firestore, "games", gameId.toString());
         await updateDoc(opponentRef, { opponent, state: GameState.Active });
     }
 
@@ -82,7 +115,10 @@ export default class GameDatabase {
         };
         if (winner) updatedData.winner = winner;
 
-        await updateDoc(doc(this.firestore, 'games', gameId.toString()), updatedData);
+        await updateDoc(
+            doc(this.firestore, "games", gameId.toString()),
+            updatedData
+        );
     }
 
     static async updateTurn(gameId: number, playerWallet: string) {
@@ -90,15 +126,20 @@ export default class GameDatabase {
         await update(turnRef, { playerWallet, turnStart: Date.now() });
     }
 
-    static async updateScore(gameId: number, side: 'creator' | 'opponent', newScore: number) {
-        const lobbyRef = doc(this.firestore, 'games', gameId.toString());
+    static async updateScore(
+        gameId: number,
+        side: "creator" | "opponent",
+        newScore: number
+    ) {
+        const lobbyRef = doc(this.firestore, "games", gameId.toString());
         await updateDoc(lobbyRef, { [`${side}.score`]: newScore });
     }
 
     static async fetchTurn(gameId: number): Promise<Turn> {
         const turnRef = ref(this.database, `/turns/${gameId}`);
         const snapshot = await get(turnRef);
-        if (!snapshot.exists() || !snapshot.val()) throw new Error('No turn was found');
+        if (!snapshot.exists() || !snapshot.val())
+            throw new Error("No turn was found");
         return snapshot.val();
     }
 
@@ -109,7 +150,10 @@ export default class GameDatabase {
             timestamp: Date.now(),
         };
 
-        const reactionRef = ref(this.database, `/emojis/${gameId}/${reaction.timestamp}`);
+        const reactionRef = ref(
+            this.database,
+            `/emojis/${gameId}/${reaction.timestamp}`
+        );
         await update(reactionRef, reaction);
     }
 
@@ -132,13 +176,14 @@ export default class GameDatabase {
         const snapshot = await get(gameRef);
         if (
             !snapshot.exists() ||
-            (snapshot.exists() && snapshot.val().timestamp + QUEUE_TIME_LIMIT > Date.now())
+            (snapshot.exists() &&
+                snapshot.val().timestamp + QUEUE_TIME_LIMIT > Date.now())
         ) {
             await update(gameRef, { wallet, timestamp: Date.now() });
-            return { success: true, message: 'User was added to a queue' };
+            return { success: true, message: "User was added to a queue" };
         }
 
-        return { success: false, message: 'Queue is full' };
+        return { success: false, message: "Queue is full" };
     }
 
     static async dequeue(gameId: number) {
@@ -153,7 +198,7 @@ export default class GameDatabase {
     }
 
     static async deleteLobby(gameId: number) {
-        const lobbyRef = doc(this.firestore, 'games', gameId.toString());
+        const lobbyRef = doc(this.firestore, "games", gameId.toString());
         await deleteDoc(lobbyRef);
     }
 
@@ -178,7 +223,7 @@ export default class GameDatabase {
         const gameRef = ref(this.database, `/data/${gameId}`);
 
         const snapshot = await get(gameRef);
-        if (!snapshot.exists()) throw new Error('Snapshot does not exist');
+        if (!snapshot.exists()) throw new Error("Snapshot does not exist");
 
         return snapshot.val() as T;
     }

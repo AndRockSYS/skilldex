@@ -16,6 +16,13 @@ export enum GameState {
     Finished,
 }
 
+export enum TableGameState {
+    Open,
+    Active,
+    Finished,
+    User,
+}
+
 export const getStateName = (state: GameState): string => {
     switch (state) {
         case GameState.Open:

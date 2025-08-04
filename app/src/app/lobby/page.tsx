@@ -27,15 +27,16 @@ import Image from "next/image";
 
 import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
+import useLobbies from "@/hooks/use-lobbies";
 
 import GameDatabase from "@/lib/firebase/games";
 
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { games } from "@/content/games";
 
-import { GameState, GameType, Lobby } from "@/types/games";
+import { GameState, GameType, TableGameState } from "@/types/games";
 import { cn } from "@/lib/utils";
 
 export default function LobbyPage() {
@@ -44,45 +45,32 @@ export default function LobbyPage() {
     const lobbyId = searchParams.get("lobbyId");
     const game = searchParams.get("game");
 
-    const [state, setState] = useState<GameState>(GameState.Open);
+    const [state, setState] = useState<TableGameState>(TableGameState.Open);
+
     const [searchTerm, setSearchTerm] = useState("");
     const [gameType, setGameType] = useState<GameType>(Number(game ?? -1));
 
     const [minStake, setMinStake] = useState<string>("");
     const [maxStake, setMaxStake] = useState<string>("");
 
-    const [page, setPage] = useState(0);
-
     const {
-        data: lobbies,
+        lobbies,
+        hasNextPage,
         fetchNextPage,
         hasPreviousPage,
         fetchPreviousPage,
-    } = useInfiniteQuery<Lobby[], Error>({
-        queryKey: ["lobby", "all", state],
-        queryFn: async ({ pageParam }) => {
-            if (lobbyId && !isNaN(Number(lobbyId))) {
-                const lobby = await GameDatabase.fetchLobbyById(
-                    Number(lobbyId)
-                );
-                return lobby ? [lobby] : [];
-            }
-            return await GameDatabase.fetchLobbies(
-                state,
-                pageParam as number | undefined
-            );
-        },
-        getNextPageParam: (lastPageLobbies) => {
-            if (lastPageLobbies.length === 0) return undefined;
-            return lastPageLobbies[lastPageLobbies.length - 1].createdAt;
-        },
-        initialPageParam: undefined,
-        initialData: { pages: [[]], pageParams: [undefined] },
-        refetchInterval: 3_000,
+        page,
+    } = useLobbies(gameType, state);
+
+    const { data: lobby } = useQuery({
+        queryKey: ["lobby", lobbyId],
+        queryFn: async () => await GameDatabase.fetchLobbyById(Number(lobbyId)),
+        enabled: !!lobbyId,
     });
 
     const filteredLobbies = useMemo(() => {
-        let filtered = lobbies.pages[page];
+        let filtered = lobby ? [lobby] : lobbies.pages[page];
+        if (!filtered) filtered = [];
 
         if (searchTerm) {
             const lowered = searchTerm.toLowerCase();
@@ -92,9 +80,6 @@ export default function LobbyPage() {
                     lobby.creator.wallet.toLowerCase().includes(lowered)
             );
         }
-
-        if ((gameType as any) != -1)
-            filtered = filtered.filter((lobby) => lobby.gameType == gameType);
 
         const parsedMinStake = parseFloat(minStake);
         if (!isNaN(parsedMinStake))
@@ -111,7 +96,7 @@ export default function LobbyPage() {
             );
 
         return filtered;
-    }, [lobbies, page, searchTerm, gameType, minStake, maxStake]);
+    }, [lobbies, lobby, page, searchTerm, gameType, minStake, maxStake]);
 
     return (
         <div className="space-y-8">
@@ -257,7 +242,9 @@ export default function LobbyPage() {
             </Accordion>
             <Tabs
                 defaultValue={GameState.Open.toString()}
-                onValueChange={(value) => setState(Number(value) as GameState)}
+                onValueChange={(value) =>
+                    setState(Number(value) as TableGameState)
+                }
                 className="w-full"
             >
                 <TabsList
@@ -266,79 +253,77 @@ export default function LobbyPage() {
                         publicKey ? "grid-cols-4" : "grid-cols-3"
                     )}
                 >
-                    <TabsTrigger value={GameState.Open.toString()}>
+                    <TabsTrigger value={TableGameState.Open.toString()}>
                         Open
                     </TabsTrigger>
-                    <TabsTrigger value={GameState.Active.toString()}>
+                    <TabsTrigger value={TableGameState.Active.toString()}>
                         Active
                     </TabsTrigger>
-                    <TabsTrigger value={GameState.Finished.toString()}>
+                    <TabsTrigger value={TableGameState.Finished.toString()}>
                         History
                     </TabsTrigger>
                     {publicKey && (
-                        <TabsTrigger value={publicKey.toString()}>
+                        <TabsTrigger value={TableGameState.User.toString()}>
                             My Games
                         </TabsTrigger>
                     )}
                 </TabsList>
-                {[GameState.Open, GameState.Active, GameState.Finished].map(
-                    (state) => (
-                        <TabsContent
-                            key={state}
-                            value={state.toString()}
-                            className="mt-4"
-                        >
-                            <Card>
-                                <CardContent className="p-0">
+                {[
+                    TableGameState.Open,
+                    TableGameState.Active,
+                    TableGameState.Finished,
+                    TableGameState.User,
+                ].map((state) => (
+                    <TabsContent
+                        key={state}
+                        value={state.toString()}
+                        className="mt-4"
+                    >
+                        <Card>
+                            <CardContent className="p-0">
+                                {state == TableGameState.User ? (
+                                    <UserLobbies
+                                        lobbies={lobbies.pages[page]}
+                                    />
+                                ) : (
                                     <LobbiesTable
                                         lobbies={filteredLobbies.filter(
                                             (lobby) => {
-                                                return state == GameState.Open
-                                                    ? lobby.state == state &&
-                                                          (!lobby.expirationTime ||
-                                                              lobby.expirationTime >
-                                                                  Date.now())
-                                                    : lobby.state == state;
+                                                return lobby.state ==
+                                                    GameState.Open
+                                                    ? !lobby.expirationTime ||
+                                                          lobby.expirationTime >
+                                                              Date.now()
+                                                    : true;
                                             }
                                         )}
-                                        status={state}
+                                        status={state as unknown as GameState}
                                     />
-                                </CardContent>
-                                <CardFooter className="flex justify-between items-center py-4 border-t">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                            fetchPreviousPage().then(() =>
-                                                setPage(page - 1)
-                                            )
-                                        }
-                                        disabled={hasPreviousPage || page == 0}
-                                    >
-                                        <ChevronLeft className="mr-2 h-4 w-4" />{" "}
-                                        Previous
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                            fetchNextPage().then(() =>
-                                                setPage(page + 1)
-                                            )
-                                        }
-                                        disabled={
-                                            lobbies.pages[page].length == 0
-                                        }
-                                    >
-                                        Next{" "}
-                                        <ChevronRight className="ml-2 h-4 w-4" />
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        </TabsContent>
-                    )
-                )}
-                <UserLobbies />
+                                )}
+                            </CardContent>
+                            <CardFooter className="flex justify-between items-center py-4 border-t">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => fetchPreviousPage()}
+                                    disabled={hasPreviousPage || page == 0}
+                                >
+                                    <ChevronLeft className="mr-2 h-4 w-4" />{" "}
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => fetchNextPage()}
+                                    disabled={!hasNextPage}
+                                >
+                                    Next{" "}
+                                    <ChevronRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    </TabsContent>
+                ))}
             </Tabs>
         </div>
     );
