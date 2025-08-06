@@ -25,7 +25,7 @@ import Announcements from "@/components/lobby/announcements";
 import UserLobbies from "@/components/lobby/user-lobbies";
 import Image from "next/image";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -39,7 +39,7 @@ import { games } from "@/content/games";
 import { GameState, GameType, TableGameState } from "@/types/games";
 import { cn } from "@/lib/utils";
 
-export default function LobbyPage() {
+function LobbyPage() {
     const { publicKey } = useWallet();
     const searchParams = useSearchParams();
     const lobbyId = searchParams.get("lobbyId");
@@ -326,5 +326,13 @@ export default function LobbyPage() {
                 ))}
             </Tabs>
         </div>
+    );
+}
+
+export default function Suspended() {
+    return (
+        <Suspense>
+            <LobbyPage />
+        </Suspense>
     );
 }
