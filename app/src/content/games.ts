@@ -11,7 +11,7 @@ export const games: GameDefinition[] = [
     },
     {
         id: GameType.ConnectFour,
-        name: "4 in a Row",
+        name: "Connect Four",
         icon: Columns,
         thumbnail: "/images/thumbnail/connect-four.png",
     },

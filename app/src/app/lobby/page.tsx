@@ -128,42 +128,45 @@ function LobbyPage() {
             </div>
             <Announcements />
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                {[{ id: -1, icon: Gamepad, name: "All Games" }, ...games].map(
-                    (game) => {
-                        const isSelected = gameType === game.id;
-                        return (
-                            <button
-                                key={game.id}
-                                onClick={() => setGameType(game.id)}
+                {[
+                    {
+                        id: -1,
+                        thumbnail: "/images/thumbnail/all-games.png",
+                        name: "All Games",
+                    },
+                    ...games,
+                ].map((game) => {
+                    const isSelected = gameType === game.id;
+                    return (
+                        <button
+                            key={game.id}
+                            onClick={() => setGameType(game.id)}
+                            className={cn(
+                                "group relative rounded-lg border-2 text-center transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
+                                isSelected
+                                    ? "bg-primary/10 border-primary"
+                                    : "bg-card/50 border-border hover:border-primary/50"
+                            )}
+                        >
+                            <Image
+                                src={game.thumbnail}
+                                alt={game.name}
+                                width={400}
+                                height={200}
+                            />
+                            <p
                                 className={cn(
-                                    "group rounded-lg border-2 p-4 text-center transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
+                                    "absolute w-full bg-card bottom-0 left-1/2 -translate-x-1/2 font-bold text-sm sm:text-base transition-colors",
                                     isSelected
-                                        ? "bg-primary/10 border-primary"
-                                        : "bg-card/50 border-border hover:border-primary/50"
+                                        ? "text-primary"
+                                        : "text-foreground"
                                 )}
                             >
-                                <game.icon
-                                    className={cn(
-                                        "h-10 w-10 mx-auto mb-3 transition-colors",
-                                        isSelected
-                                            ? "text-primary"
-                                            : "text-muted-foreground group-hover:text-primary"
-                                    )}
-                                />
-                                <p
-                                    className={cn(
-                                        "font-bold text-sm sm:text-base transition-colors",
-                                        isSelected
-                                            ? "text-primary"
-                                            : "text-foreground"
-                                    )}
-                                >
-                                    {game.name}
-                                </p>
-                            </button>
-                        );
-                    }
-                )}
+                                {game.name}
+                            </p>
+                        </button>
+                    );
+                })}
             </div>
             <Accordion type="single" collapsible className="w-full">
                 <AccordionItem
