@@ -145,9 +145,7 @@ export default function NavBar() {
                                             {item.label}
                                         </Link>
                                     ))}
-                                    <div className="mt-4 border-t pt-4 px-2">
-                                        <WalletMultiButton className="w-full min-h-[40px] text-lg bg-primary text-primary-foreground rounded-lg" />
-                                    </div>
+                                    <WalletMultiButton />
                                 </div>
                             </SheetContent>
                         </Sheet>
@@ -162,11 +160,7 @@ const WalletBalance = ({ isMobile }: { isMobile: boolean }) => {
     const { publicKey } = useWallet();
     const { connection } = useConnection();
 
-    const {
-        data: balance,
-        isFetching,
-        isRefetching,
-    } = useQuery({
+    const { data: balance, isSuccess } = useQuery({
         queryKey: [publicKey ?? "user", "balance"],
         queryFn: async () => {
             if (!publicKey) return 0;
@@ -186,7 +180,7 @@ const WalletBalance = ({ isMobile }: { isMobile: boolean }) => {
                 isMobile ? "text-xs" : "text-sm"
             )}
         >
-            {isFetching && !balance ? (
+            {!isSuccess ? (
                 <Loader2
                     className={cn(
                         isMobile ? "size-3.5" : "size-4",

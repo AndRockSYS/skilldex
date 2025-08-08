@@ -73,13 +73,17 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
 }
 
+.wallet-adapter-button {
+    text-wrap-mode: nowrap;
+}
+
 @layer base {
     * {
         @apply border-border;
     }
 
     body {
-        font-family: 'Inter', Arial, Helvetica, sans-serif;
+        font-family: "Inter", Arial, Helvetica, sans-serif;
         @apply bg-background text-foreground;
     }
 }
