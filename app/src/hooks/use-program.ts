@@ -1,19 +1,24 @@
-import { useAnchorWallet } from '@solana/wallet-adapter-react';
-import { useCallback, useMemo, useState } from 'react';
-import { useToast } from './use-toast';
+import { useAnchorWallet } from "@solana/wallet-adapter-react";
+import { useCallback, useMemo, useState } from "react";
+import { useToast } from "./use-toast";
 
-import { getPlatform } from '@/actions';
+import { getPlatform } from "@/actions";
 
-import { getLobbyAddress, getPlatformPubKey, initProgram, parseEventLogs } from '@/lib/solana';
-import { BorshCoder, web3, BN } from '@coral-xyz/anchor';
+import {
+    getLobbyAddress,
+    getPlatformPubKey,
+    initProgram,
+    parseEventLogs,
+} from "@/lib/solana";
+import { BorshCoder, web3, BN } from "@coral-xyz/anchor";
 
-import { IDL } from '@/data/program-idl';
-import { connection } from '@/config/solana';
+import { IDL } from "@/data/program-idl";
+import { connection } from "@/config/solana";
 
-import { convertGameType } from '@/utils/formatter';
+import { convertGameType } from "@/utils/formatter";
 
-import { PublicKey, Transaction } from '@solana/web3.js';
-import { GameType } from '@/types/games';
+import { PublicKey, Transaction } from "@solana/web3.js";
+import { GameType } from "@/types/games";
 
 const useProgram = () => {
     const { toast } = useToast();
@@ -22,14 +27,18 @@ const useProgram = () => {
     const coder = useMemo(() => new BorshCoder(IDL as any), []);
 
     const wallet = useAnchorWallet();
-    const program = useMemo(() => (wallet ? initProgram(wallet) : undefined), [wallet]);
+    const program = useMemo(
+        () => (wallet ? initProgram(wallet) : undefined),
+        [wallet]
+    );
 
     const completeTransaction = useCallback(
         async (tx: Transaction, platform?: web3.Keypair) => {
             try {
                 if (!wallet) return;
 
-                let { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+                let { blockhash, lastValidBlockHeight } =
+                    await connection.getLatestBlockhash();
                 tx.lastValidBlockHeight = lastValidBlockHeight + 50;
                 tx.recentBlockhash = blockhash;
                 tx.feePayer = wallet.publicKey;
@@ -37,25 +46,32 @@ const useProgram = () => {
                 const signed = await wallet.signTransaction(tx);
                 if (platform) signed.partialSign(platform);
 
-                const txId = await connection.sendRawTransaction(signed.serialize());
+                const txId = await connection.sendRawTransaction(
+                    signed.serialize()
+                );
                 const confirmation = await connection.confirmTransaction(
                     {
                         signature: txId,
                         blockhash,
                         lastValidBlockHeight,
                     },
-                    'confirmed'
+                    "confirmed"
                 );
 
-                if (confirmation.value.err) throw new Error(confirmation.value.err.toString());
+                if (confirmation.value.err)
+                    throw new Error(confirmation.value.err.toString());
 
-                return { signature: txId, error: confirmation.value.err?.toString() };
+                return {
+                    signature: txId,
+                    error: confirmation.value.err?.toString(),
+                };
             } catch (error: any) {
                 console.error(error);
                 toast({
-                    title: 'Tx Error',
-                    description: error.message ?? 'Your transaction was not submitted.',
-                    variant: 'destructive',
+                    title: "Tx Error",
+                    description:
+                        error.message ?? "Your transaction was not submitted.",
+                    variant: "destructive",
                 });
             } finally {
                 setIsProcessing(false);
@@ -68,21 +84,25 @@ const useProgram = () => {
         async (gameType: GameType, bet: number, expireTime: number) => {
             if (!wallet?.publicKey || !program) {
                 toast({
-                    title: 'Wallet Not Connected',
-                    description: 'Please connect your wallet.',
-                    variant: 'destructive',
+                    title: "Wallet Not Connected",
+                    description: "Please connect your wallet.",
+                    variant: "destructive",
                 });
                 return;
             }
             setIsProcessing(true);
 
-            const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
+            const platformSigner = web3.Keypair.fromSecretKey(
+                await getPlatform()
+            );
 
             const tx = await program.methods
                 .createLobby(
                     convertGameType(gameType),
                     new BN(bet),
-                    expireTime ? new BN(Math.floor(expireTime / 1000)) : new BN(0)
+                    expireTime
+                        ? new BN(Math.floor(expireTime / 1000))
+                        : new BN(0)
                 )
                 .accounts({
                     //@ts-expect-error
@@ -94,10 +114,17 @@ const useProgram = () => {
             const data = await completeTransaction(tx, platformSigner);
             if (!data || data.error) return;
 
-            const logs = await parseEventLogs(connection, data.signature, program);
+            const logs = await parseEventLogs(
+                connection,
+                data.signature,
+                program
+            );
             for (let event of logs) {
-                if (event.name == 'lobbyCreation')
-                    return { lobbyId: event.data.lobbyId, signature: data.signature };
+                if (event.name == "lobbyCreation")
+                    return {
+                        lobbyId: event.data.lobbyId,
+                        signature: data.signature,
+                    };
             }
         },
         [wallet, program]
@@ -107,15 +134,17 @@ const useProgram = () => {
         async (lobbyId: number) => {
             if (!wallet?.publicKey || !program) {
                 toast({
-                    title: 'Wallet Not Connected',
-                    description: 'Please connect your wallet.',
-                    variant: 'destructive',
+                    title: "Wallet Not Connected",
+                    description: "Please connect your wallet.",
+                    variant: "destructive",
                 });
                 return;
             }
             setIsProcessing(true);
 
-            const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
+            const platformSigner = web3.Keypair.fromSecretKey(
+                await getPlatform()
+            );
 
             const tx = await program.methods
                 .joinLobby(new BN(lobbyId))
@@ -135,9 +164,9 @@ const useProgram = () => {
         async (lobbyId: number) => {
             if (!wallet?.publicKey || !program) {
                 toast({
-                    title: 'Wallet Not Connected',
-                    description: 'Please connect your wallet.',
-                    variant: 'destructive',
+                    title: "Wallet Not Connected",
+                    description: "Please connect your wallet.",
+                    variant: "destructive",
                 });
                 return;
             }
@@ -159,15 +188,17 @@ const useProgram = () => {
         async (lobbyId: number) => {
             if (!wallet?.publicKey || !program) {
                 toast({
-                    title: 'Wallet Not Connected',
-                    description: 'Please connect your wallet.',
-                    variant: 'destructive',
+                    title: "Wallet Not Connected",
+                    description: "Please connect your wallet.",
+                    variant: "destructive",
                 });
                 return;
             }
             setIsProcessing(true);
 
-            const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
+            const platformSigner = web3.Keypair.fromSecretKey(
+                await getPlatform()
+            );
 
             const tx = await program.methods
                 .declareWinner(new BN(lobbyId))
@@ -187,15 +218,17 @@ const useProgram = () => {
         async (lobbyId: number, secondPlayer: string) => {
             if (!wallet?.publicKey || !program) {
                 toast({
-                    title: 'Wallet Not Connected',
-                    description: 'Please connect your wallet.',
-                    variant: 'destructive',
+                    title: "Wallet Not Connected",
+                    description: "Please connect your wallet.",
+                    variant: "destructive",
                 });
                 return;
             }
             setIsProcessing(true);
 
-            const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
+            const platformSigner = web3.Keypair.fromSecretKey(
+                await getPlatform()
+            );
 
             const tx = await program.methods
                 .declareTie(new BN(lobbyId))
@@ -217,10 +250,12 @@ const useProgram = () => {
         current_id: BN;
         balance: BN;
     }> => {
-        const accountInfo = await connection.getAccountInfo(getPlatformPubKey());
-        if (!accountInfo) throw new Error('Account not found');
+        const accountInfo = await connection.getAccountInfo(
+            getPlatformPubKey()
+        );
+        if (!accountInfo) throw new Error("Account not found");
 
-        return coder.accounts.decode('Platform', accountInfo.data);
+        return coder.accounts.decode("Platform", accountInfo.data);
     }, [connection]);
 
     const fetchLobbyData = useCallback(
@@ -239,8 +274,8 @@ const useProgram = () => {
             const lobbyAddress = getLobbyAddress(lobbyId);
             const accountInfo = await connection.getAccountInfo(lobbyAddress);
 
-            if (!accountInfo) throw new Error('Account not found');
-            return coder.accounts.decode('Lobby', accountInfo.data);
+            if (!accountInfo) throw new Error("Account not found");
+            return coder.accounts.decode("Lobby", accountInfo.data);
         },
         [connection]
     );
@@ -250,9 +285,9 @@ const useProgram = () => {
     const initializePlatform = useCallback(async () => {
         if (!wallet?.publicKey || !program) {
             toast({
-                title: 'Wallet Not Connected',
-                description: 'Please connect your wallet.',
-                variant: 'destructive',
+                title: "Wallet Not Connected",
+                description: "Please connect your wallet.",
+                variant: "destructive",
             });
             return;
         }
@@ -272,15 +307,17 @@ const useProgram = () => {
         async (newSigner: PublicKey) => {
             if (!wallet?.publicKey || !program) {
                 toast({
-                    title: 'Wallet Not Connected',
-                    description: 'Please connect your wallet.',
-                    variant: 'destructive',
+                    title: "Wallet Not Connected",
+                    description: "Please connect your wallet.",
+                    variant: "destructive",
                 });
                 return;
             }
             setIsProcessing(true);
 
-            const platformSigner = web3.Keypair.fromSecretKey(await getPlatform());
+            const platformSigner = web3.Keypair.fromSecretKey(
+                await getPlatform()
+            );
 
             const tx = await program.methods
                 .updatePlatformSigner()
@@ -299,9 +336,9 @@ const useProgram = () => {
     const withdrawCommission = useCallback(async () => {
         if (!wallet?.publicKey || !program) {
             toast({
-                title: 'Wallet Not Connected',
-                description: 'Please connect your wallet.',
-                variant: 'destructive',
+                title: "Wallet Not Connected",
+                description: "Please connect your wallet.",
+                variant: "destructive",
             });
             return;
         }

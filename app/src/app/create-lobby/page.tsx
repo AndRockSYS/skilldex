@@ -61,6 +61,7 @@ import {
 } from "@/utils/constants";
 import { games } from "@/content/games";
 
+import { blockchain } from "@/config/solana";
 import { getTokenName, Token } from "@/types/utils";
 import {
     GameState,
@@ -91,7 +92,7 @@ function CreateLobby() {
             gameType:
                 games.find((g) => g.id == Number(gameTypeId))?.id ??
                 GameType.TicTacToe,
-            token: Token.SOL,
+            token: blockchain == "solana" ? Token.SOL : Token.X1,
             stake: stake ? Number(stake) / LAMPORTS_PER_SOL : MIN_STAKE,
             expiration: EXPIRATION_OPTIONS[0].id,
             turnTimeLimit: TURN_LIMITS[0].id,
@@ -314,12 +315,21 @@ function CreateLobby() {
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem
-                                                    key={Token.SOL}
-                                                    value={Token.SOL.toString()}
-                                                >
-                                                    SOL
-                                                </SelectItem>
+                                                {blockchain == "solana" ? (
+                                                    <SelectItem
+                                                        key={Token.SOL}
+                                                        value={Token.SOL.toString()}
+                                                    >
+                                                        SOL
+                                                    </SelectItem>
+                                                ) : (
+                                                    <SelectItem
+                                                        key={Token.X1}
+                                                        value={Token.X1.toString()}
+                                                    >
+                                                        X1
+                                                    </SelectItem>
+                                                )}
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
