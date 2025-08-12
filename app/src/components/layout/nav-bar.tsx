@@ -11,7 +11,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import ConnectWalletButton from "../ui/connect-wallet-button";
 
 import { usePathname } from "next/navigation";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
@@ -90,7 +90,7 @@ export default function NavBar() {
                         </Link>
                         <div className="ml-4 flex items-center gap-3">
                             <WalletBalance isMobile={false} />
-                            <WalletMultiButton className="py-4 w-full min-h-[40px] text-lg bg-primary text-primary-foreground rounded-lg" />
+                            <ConnectWalletButton />
                             <ProfileIcon />
                         </div>
                     </div>
@@ -145,7 +145,7 @@ export default function NavBar() {
                                             {item.label}
                                         </Link>
                                     ))}
-                                    <WalletMultiButton />
+                                    <ConnectWalletButton />
                                 </div>
                             </SheetContent>
                         </Sheet>
