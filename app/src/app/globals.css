@@ -121,14 +121,13 @@
     .rainbow-text {
         background: linear-gradient(
             to right,
-            #ff0000,
-            #ff7f00,
-            #ffff00,
-            #00ff00,
-            #0000ff,
-            #4b0082,
-            #9400d3,
-            #ff0000
+            #e0f7fa,
+            #b3e5fc,
+            #81d4fa,
+            #4fc3f7,
+            #29b6f6,
+            #039be5,
+            #0277bd
         );
         background-size: 300% auto;
         -webkit-background-clip: text;
@@ -141,14 +140,13 @@
     .btn-rainbow-bg {
         background: linear-gradient(
             to right,
-            #ff0000,
-            #ff7f00,
-            #ffff00,
-            #00ff00,
-            #0000ff,
-            #4b0082,
-            #9400d3,
-            #ff0000
+            #e0f7fa,
+            #b3e5fc,
+            #81d4fa,
+            #4fc3f7,
+            #29b6f6,
+            #039be5,
+            #0277bd
         );
         background-size: 400% 400%;
         animation: rainbow-flow 8s linear infinite;
